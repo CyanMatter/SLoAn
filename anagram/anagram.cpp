@@ -128,11 +128,12 @@ vector<unsigned long long> toBitboards(const string& word)
 /// <returns>An integer with the number of occurences of the letter in any word the array of bitboards represents</returns>
 int collectCount(const unsigned int letter, vector<unsigned long long> bitboards, const int nBoards)
 {
-	unsigned long long mask = (1 << ((letter-97) << 1)) * 3;
 	int count = 0;
-	for (int i=0; i<nBoards; i++)
+	for (unsigned long long i=0; i<nBoards; i++)
 	{
-		count += (((int) bitboards[i] & mask) >> ((letter-97)*2)) * (1 << (i << 1));
+		int shiftedBitboard = (unsigned long long) bitboards[i] >> ((letter - 97) << 1);	// shift this bitboard so the bits for this letter are at index 0 and 1
+		int maskedBitboard = shiftedBitboard & 3ull;										// mask this bitboard so that all irrelevant bits are set to 0
+		count += maskedBitboard * (1ull << (i << 1ull));									// calculate how much this bitboard counts towards the total count
 	}
 	return count;
 }
