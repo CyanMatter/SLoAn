@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <unordered_map>
 #include <vector>
 #include <string>
 
@@ -12,12 +13,12 @@ using std::ifstream; using std::vector;
 
 bool fileExists(const string& name);
 vector<string>* loadVocab(const string& path);
+std::unordered_map<vector<unsigned long long>, vector<string>*>* buildMap(vector<string>* vocab);
 vector<unsigned long long> toBitboards(const string& word);
 int collectCount(unsigned int letter, vector<unsigned long long>, const int nBoards);
 
 int main()
 {
-	/*
 	string path_to_wordlist = "db\\3esl.txt";
 	if (!fileExists(path_to_wordlist))
 	{
@@ -25,13 +26,10 @@ int main()
 		cout << "Cannot open " + absolute_path;
 		EXIT_FAILURE;
 	}
-
 	vector<string>* vocab = loadVocab(path_to_wordlist);
-	*/
 
-	vector<unsigned long long> bitboards;
-	bitboards = toBitboards("ppp");
-	int count = collectCount(96 + 16, bitboards, 2);//!error
+	std::unordered_map<vector<unsigned long long>, vector<string>*>* anagramMap;
+	anagramMap = buildMap(vocab);
 
 	return 0;
 }
@@ -72,6 +70,24 @@ vector<string>* loadVocab(const string& path)
 
 	return lines;
 }
+
+std::unordered_map<vector<unsigned long long>, vector<string>*>* buildMap(vector<string>* vocab)
+{
+	std::unordered_map<vector<unsigned long long>, vector<string>*>* anagramMap = {};
+	
+	for (int i = 0; i < (*vocab).size(); i++) {
+		string word = (*vocab)[i];
+		vector<unsigned long long> bitboards = toBitboards(word);
+		vector<string>* anagrams = (*anagramMap)[bitboards];
+		(*anagrams).push_back(word);
+		// WIP does not build
+		// user .find(key) to get iterator to get iterator. If iterator == .end(), then no such key exists
+		// https://en.cppreference.com/w/cpp/container/unordered_map/find
+	}
+
+	return anagramMap;
+}
+
 
 /// <summary>
 /// Accepts a string and converts it to a vector of bitboards that represents it.
@@ -129,11 +145,12 @@ vector<unsigned long long> toBitboards(const string& word)
 int collectCount(const unsigned int letter, vector<unsigned long long> bitboards, const int nBoards)
 {
 	int count = 0;
+	const int letterIndex = (letter - 97) << 1;
 	for (unsigned long long i=0; i<nBoards; i++)
 	{
-		int shiftedBitboard = (unsigned long long) bitboards[i] >> ((letter - 97) << 1);	// shift this bitboard so the bits for this letter are at index 0 and 1
-		int maskedBitboard = shiftedBitboard & 3ull;										// mask this bitboard so that all irrelevant bits are set to 0
-		count += maskedBitboard * (1ull << (i << 1ull));									// calculate how much this bitboard counts towards the total count
+		int shiftedBitboard = (unsigned long long) bitboards[i] >> letterIndex;		// shift this bitboard so the bits for this letter are at index 0 and 1
+		int maskedBitboard = shiftedBitboard & 3ull;								// mask this bitboard so that all irrelevant bits are set to 0
+		count += maskedBitboard << (i << 1ull);										// calculate how much this bitboard counts towards the total count
 	}
 	return count;
 }
