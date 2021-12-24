@@ -74,15 +74,24 @@ vector<string>* loadVocab(const string& path)
 std::unordered_map<vector<unsigned long long>, vector<string>*>* buildMap(vector<string>* vocab)
 {
 	std::unordered_map<vector<unsigned long long>, vector<string>*>* anagramMap = {};
-	
+
 	for (int i = 0; i < (*vocab).size(); i++) {
+
 		string word = (*vocab)[i];
-		vector<unsigned long long> bitboards = toBitboards(word);
-		vector<string>* anagrams = (*anagramMap)[bitboards];
-		(*anagrams).push_back(word);
-		// WIP does not build
-		// user .find(key) to get iterator to get iterator. If iterator == .end(), then no such key exists
-		// https://en.cppreference.com/w/cpp/container/unordered_map/find
+		if (word.size() == 1 && (tolower(word[0]) != 'a' || tolower(word[0]) != 'i')) {
+			vector<unsigned long long> bitboards = toBitboards(word);
+			auto iter = (*anagramMap).find(bitboards);
+			if (iter == (*anagramMap).end()) {
+				vector<string>* newAnagramList = new vector<string>();
+				(*newAnagramList).push_back(word);
+				(*anagramMap).insert({ bitboards, newAnagramList });
+			}
+			else {
+				vector<string>* anagramList = (*anagramMap)[bitboards];
+				(*anagramList).push_back(word);
+			}
+		}
+		// WIP
 	}
 
 	return anagramMap;
@@ -117,7 +126,7 @@ vector<unsigned long long> toBitboards(const string& word)
 
 	for (int letter = 0; letter < 26; letter++) {					// iterate over each letter in the alphabet
 		count = letterCounts[letter];								// get amount of occurences of this letter in the word
-		
+
 		if (count > maxCount) {										// exception if there aren't enough bitboards in the array
 			EXIT_FAILURE; // integer overflow
 			//todo: substitute with dynamic bitboards array size
@@ -146,7 +155,7 @@ int collectCount(const unsigned int letter, vector<unsigned long long> bitboards
 {
 	int count = 0;
 	const int letterIndex = (letter - 97) << 1;
-	for (unsigned long long i=0; i<nBoards; i++)
+	for (unsigned long long i = 0; i < nBoards; i++)
 	{
 		int shiftedBitboard = (unsigned long long) bitboards[i] >> letterIndex;		// shift this bitboard so the bits for this letter are at index 0 and 1
 		int maskedBitboard = shiftedBitboard & 3ull;								// mask this bitboard so that all irrelevant bits are set to 0
