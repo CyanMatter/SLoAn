@@ -14,7 +14,7 @@ using std::ifstream; using std::vector;
 
 bool fileExists(const string& name);
 vector<string>* loadVocab(const string& path);
-unordered_map<vector<unsigned long long>, vector<string>*>* buildMap(vector<string>* vocab);
+unordered_map<vector<unsigned long long>, vector<string*>>* buildMap(vector<string>* vocab);
 vector<unsigned long long> toBitboards(const string& word);
 int collectCount(unsigned int letter, vector<unsigned long long>, const int nBoards);
 
@@ -29,7 +29,7 @@ int main()
 	}
 	vector<string>* vocab = loadVocab(path_to_wordlist);
 
-	unordered_map<vector<unsigned long long>, vector<string>*>* anagramMap;
+	unordered_map<vector<unsigned long long>, vector<string*>>* anagramMap;
 	anagramMap = buildMap(vocab);
 
 	return 0;
@@ -72,24 +72,25 @@ vector<string>* loadVocab(const string& path)
 	return lines;
 }
 
-unordered_map<vector<unsigned long long>, vector<string>*>* buildMap(vector<string>* vocab)
+unordered_map<vector<unsigned long long>, vector<string*>>* buildMap(vector<string>* vocab)
 {
-	unordered_map<vector<unsigned long long>, vector<string>*> anagramMap;
+	//unordered_map<unique_ptr<vector<unsigned long long>>, unique_ptr<vector<string>>> anagramMap;
+	unordered_map<vector<unsigned long long>, vector<string*>> anagramMap;
 
-	for (int i = 0; i < (*vocab).size(); i++) {												// iterate over each word in vocab list
-		const string word = (*vocab)[i];
+	for (int i = 0; i < (*vocab).size(); i++) {											// iterate over each word in vocab list
+		string word = (*vocab)[i];
 
-		if (word.size() == 1 && (tolower(word[0]) != 'a' || tolower(word[0]) != 'i'))		// filter out all single letter "words," except a and i
+		if (word.size() == 1 && (tolower(word[0]) != 'a' || tolower(word[0]) != 'i'))	// filter out all single letter "words," except a and i
 			continue;
 
-		const vector<unsigned long long> key = toBitboards(word);							// the bitboard array of this word functions as a key in the hashmap
-		if (anagramMap.count(key) > 0) {													// if the key yet exists in the hashmap
-			vector<string>* anagramList = anagramMap[key];								// retrieve the list of anagrams that belong to this key
-			(*anagramList).push_back(word);													// add this word to that list of anagrams
+		const vector<unsigned long long> key = toBitboards(word);						// the bitboard array of this word functions as a key in the hashmap
+		if (anagramMap.count(key) > 0) {												// if the key yet exists in the hashmap
+			vector<string*> anagramList = anagramMap[key];								// retrieve the list of anagrams that belong to this key
+			anagramList.push_back(&word);												// add this word to that list of anagrams
 		}
-		else {																				// else, the key does not yet exist in the hashmap
-			vector<string>* newAnagramList = new vector<string>();							// create a new list of anagrams
-			(*newAnagramList).push_back(word);												// add this word as the first anagram to the new list
+		else {																			// else, the key does not yet exist in the hashmap
+			vector<string*> newAnagramList;												// create a new list of anagrams
+			newAnagramList.push_back(&word);											// add this word as the first anagram to the new list
 			anagramMap.insert({ key, newAnagramList });									// add it as a new key-value pair to the hashmap
 		}
 		// WIP
