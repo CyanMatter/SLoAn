@@ -76,13 +76,21 @@ std::unordered_map<vector<unsigned long long>, vector<string>*>* buildMap(vector
 	std::unordered_map<vector<unsigned long long>, vector<string>*>* anagramMap = {};
 	
 	for (int i = 0; i < (*vocab).size(); i++) {
+		
 		string word = (*vocab)[i];
-		vector<unsigned long long> bitboards = toBitboards(word);
-		vector<string>* anagrams = (*anagramMap)[bitboards];
-		(*anagrams).push_back(word);
-		// WIP does not build
-		// user .find(key) to get iterator to get iterator. If iterator == .end(), then no such key exists
-		// https://en.cppreference.com/w/cpp/container/unordered_map/find
+		string word_lowercase = transform(word.begin(), word.end(), word.begin(), ::tolower);
+		if (word.size() == 1 && (word_lowercase != "a" || word_lowercase != "i")) {
+			vector<unsigned long long> bitboards = toBitboards(word);
+			auto iter = (*anagramMap).find(bitboards);
+			if (iter == (*anagramMap).end()) {
+				vector<string>* newArray = new vector<string>();
+				newArray->push_back(word);
+				(*anagramMap)[bitboards] = newArray;
+			}
+			else {
+				(*anagramMap)[bitboards].push_back(word);
+			}
+		}
 	}
 
 	return anagramMap;
