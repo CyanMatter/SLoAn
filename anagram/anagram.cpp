@@ -15,69 +15,34 @@ using std::ifstream; using std::vector;
 
 bool fileExists(const string& name);
 vector<string>* loadVocab(const string& path);
-std::unordered_map<string, vector<string>> buildMap(vector<string>* vocab);
+unordered_map<string, vector<string>> buildMap(vector<string>* vocab);
 string queryInput();
 string receiveInput(int input);
 string parseInput(string input);
+void findAndLogAnagrams(unordered_map<string, vector<string>> anagramMap, string input, bool debug);
 
-int main()
+int main(int argc, char* argv[])
 {
 	const bool debug = true;
-	string path_to_wordlist = "db\\3esl.txt";
+	string path_to_wordlist = "db\\2of12inf.txt";
 
-	clock_t t;
-
+	string absolute_path_to_wordlist = fs::current_path().string() + "\\" + path_to_wordlist;
 	if (!fileExists(path_to_wordlist))
 	{
-		string absolute_path = fs::current_path().string() + "\\" + path_to_wordlist;
-		cout << "Cannot open " + absolute_path;
+		cout << "Cannot open " + absolute_path_to_wordlist;
 		EXIT_FAILURE;
 	}
-
-	t = clock();
-
+	cout << "Loading " << absolute_path_to_wordlist << "...";
+	clock_t t = clock();
 	vector<string>* vocab = loadVocab(path_to_wordlist);
-	std::unordered_map<string, vector<string>> anagramMap;
-	anagramMap = buildMap(vocab);
-
+	unordered_map<string, vector<string>> anagramMap = buildMap(vocab);
 	t = clock() - t;
+
 	if (debug)
 		cout << "Constructed hashmap in approximately " << (float)t / CLOCKS_PER_SEC << "seconds\n";
 
 	string input = queryInput();
-	
-	t = clock();
-
-	string key = input;
-	sort(key.begin(), key.end());
-	std::unordered_map<string, vector<string>>::const_iterator iterator = anagramMap.find(key);
-
-	t = clock() - t;
-
-	if (iterator == anagramMap.end()) {
-		cout << "0 anagrams found";
-		if (debug)
-			printf(" in approximately %f seconds", (float)t / CLOCKS_PER_SEC);
-		cout << "\n";
-	}
-	else {
-		vector<string> anagrams = iterator->second;
-		vector<string>::iterator input_index = find(anagrams.begin(), anagrams.end(), input);		// try to find input text in anagrams
-		if (input_index != anagrams.end()) {														// in case input text in anagrams
-			anagrams.erase(input_index);															// filter input text from anagrams
-		}	
-
-		const unsigned int size = anagrams.size();
-		cout << size << " anagram" << ((size != 1) ? "s" : "") << " found";
-		if (debug)
-			printf(" in approximately %f seconds", (float)t / CLOCKS_PER_SEC);
-		cout << "\n";
-		for (string word : anagrams) {
-			if (word != input) {
-				cout << word << "\n";
-			}
-		}
-	}
+	findAndLogAnagrams(anagramMap, input, debug);
 
 	return 0;
 }
@@ -225,4 +190,37 @@ string parseInput(string input)
 	}
 
 	return parsedInput;
+}
+
+void findAndLogAnagrams(unordered_map<string, vector<string>> anagramMap, string input, bool debug = false) {
+	clock_t t = clock();
+	string key = input;
+	sort(key.begin(), key.end());
+	unordered_map<string, vector<string>>::const_iterator iterator = anagramMap.find(key);
+	t = clock() - t;
+	
+	if (iterator == anagramMap.end()) {
+		cout << "0 anagrams found";
+		if (debug)
+			printf(" in approximately %f seconds", t / CLOCKS_PER_SEC);
+		cout << "\n";
+	}
+	else {
+		vector<string> anagrams = iterator->second;
+		vector<string>::iterator input_index = find(anagrams.begin(), anagrams.end(), input);		// try to find input text in anagrams
+		if (input_index != anagrams.end()) {														// in case input text in anagrams
+			anagrams.erase(input_index);															// filter input text from anagrams
+		}
+
+		const unsigned int size = anagrams.size();
+		cout << size << " anagram" << ((size != 1) ? "s" : "") << " found";
+		if (debug)
+			printf(" in approximately %f seconds", t / CLOCKS_PER_SEC);
+		cout << "\n";
+		for (string word : anagrams) {
+			if (word != input) {
+				cout << word << "\n";
+			}
+		}
+	}
 }
