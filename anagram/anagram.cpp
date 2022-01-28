@@ -5,6 +5,9 @@
 #include <vector>
 #include <string>
 #include <time.h>
+
+#include "hashmap.h"
+
 using namespace std;
 
 namespace fs = filesystem;
@@ -14,35 +17,45 @@ using std::endl; using std::string;
 using std::ifstream; using std::vector;
 
 bool fileExists(const string& name);
-vector<string>* loadVocab(const string& path);
-unordered_map<string, vector<string>> buildMap(vector<string>* vocab);
 string queryInput();
 string receiveInput(int input);
 string parseInput(string input);
-void findAndLogAnagrams(unordered_map<string, vector<string>> anagramMap, string input, bool debug);
+void findAndLogAnagrams(hashmap anagramMap, string input, bool debug);
 
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
 	string path_to_wordlist = "db\\2of12inf.txt";
+	hashmap* const& map = new hashmap();
 
-	string absolute_path_to_wordlist = fs::current_path().string() + "\\" + path_to_wordlist;
-	if (!fileExists(path_to_wordlist))
-	{
-		cout << "Cannot open " + absolute_path_to_wordlist;
-		EXIT_FAILURE;
+	bool lookingForFile = true;
+	while (lookingForFile) {
+		string absolute_path_to_wordlist = fs::current_path().string() + "\\" + path_to_wordlist;
+		if (!fileExists(path_to_wordlist))
+		{
+			cout << "Cannot open " + absolute_path_to_wordlist;
+			EXIT_FAILURE;
+		}
+
+		(*map).setFile(absolute_path_to_wordlist);
+		cout << "Loading " << absolute_path_to_wordlist << "...";
+		clock_t t = clock();
+		try {
+			hashmap::build(map);
+		}
+		catch (invalid_argument) {
+			continue;
+		}
+		lookingForFile = false;
+
+		t = clock() - t;
+
+		if (debug)
+			cout << "Constructed hashmap in approximately " << (float)t / CLOCKS_PER_SEC << "seconds\n";
 	}
-	cout << "Loading " << absolute_path_to_wordlist << "...";
-	clock_t t = clock();
-	vector<string>* vocab = loadVocab(path_to_wordlist);
-	unordered_map<string, vector<string>> anagramMap = buildMap(vocab);
-	t = clock() - t;
-
-	if (debug)
-		cout << "Constructed hashmap in approximately " << (float)t / CLOCKS_PER_SEC << "seconds\n";
 
 	string input = queryInput();
-	findAndLogAnagrams(anagramMap, input, debug);
+	findAndLogAnagrams((*map), input, debug);
 
 	return 0;
 }
@@ -57,55 +70,6 @@ bool fileExists(const string& name)
 {
 	struct stat buffer;
 	return (stat(name.c_str(), &buffer) == 0);
-}
-
-/// <summary>
-/// Reads the text file located at provided path and returns a vector of strings of which each entry is a line in the file
-/// </summary>
-/// <param name="path">The path to the text file to be loaded relative from the current working directory</param>
-/// <returns>Vector of strings each line containing a line of the text file</returns>
-vector<string>* loadVocab(const string& path)
-{
-	vector<string>* lines = new vector<string>();
-	string word;
-
-	ifstream input_file(path);
-	if (!input_file.is_open()) {
-		cerr << "Could not open the file - '"
-			<< path << "'" << endl;
-		return lines;
-	}
-
-	while (getline(input_file, word)) {
-		(*lines).push_back(word);
-	}
-	input_file.close();
-
-	return lines;
-}
-
-std::unordered_map<string, vector<string>> buildMap(vector<string>* vocab)
-{
-	std::unordered_map<string, vector<string>> anagramMap = {};
-
-	for (int i = 0; i < (*vocab).size(); i++) {
-		string word = (*vocab)[i];						// for each word in vocabulary
-
-		if (word.length() == 1 && tolower(word[0]) != 'a' && tolower(word[0]) != 'i')
-			continue;									// skip all single letter words except 'a' and 'i'
-
-		string key = word;								// copy the word to new variable
-		sort(key.begin(), key.end());					// alphabetically sort key
-
-		vector<string> anagrams;						// initialize empty vector
-		if (anagramMap.find(key) != anagramMap.end()) {	// if key already exists in map
-			anagrams = anagramMap[key];					// refer 'anagrams' to the value associated with the key
-		}
-		anagrams.insert(anagrams.end(), word);			// add 'word' to the array of its anagrams
-		anagramMap[key] = anagrams;						// store it in the hashmap
-	}
-
-	return anagramMap;
 }
 
 string queryInput()
@@ -192,11 +156,12 @@ string parseInput(string input)
 	return parsedInput;
 }
 
-void findAndLogAnagrams(unordered_map<string, vector<string>> anagramMap, string input, bool debug = false) {
+void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false) {
 	clock_t t = clock();
+	auto anagramMap = hashmap.getAnagramMap();
 	string key = input;
 	sort(key.begin(), key.end());
-	unordered_map<string, vector<string>>::const_iterator iterator = anagramMap.find(key);
+	auto iterator = anagramMap.find(key);
 	t = clock() - t;
 	
 	if (iterator == anagramMap.end()) {

@@ -20,6 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="anagram.cpp" />
+    <ClCompile Include="hashmap.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="hashmap.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
