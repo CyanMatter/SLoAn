@@ -33,6 +33,35 @@ path& hashmap::getFile_path()
 	return file_path;
 }
 
+// WIP try to build boost serialize at home
+// https://stackoverflow.com/questions/21141243/how-to-build-boost-serialization-library/21141851
+// https://www.boost.org/doc/libs/1_78_0/tools/build/doc/html/index.html#bbv2.overview.invocation
+// https://www.boost.org/doc/libs/1_78_0/more/getting_started/windows.html#prepare-to-use-a-boost-library-binary
+/*
+void hashmap::write()
+{
+	ofstream ofs("hashmap");
+	boost::archive::binary_oarchive oa(ofs);
+	oa << this->anagramMap;
+}
+
+void hashmap::load()
+{
+	this->anagramMap = {};
+	{
+		ifstream ifs("hashmap");
+		boost::archive::binary_iarchive ia(ifs);
+		ia >> this->anagramMap;
+	}
+
+	for (auto& p : this->anagramMap) {
+		cout << p.first << " -> { ";
+		copy(p.second.begin(), p.second.end(), ostream_iterator<string>(cout, " "));
+		cout << "}\n";
+	}
+}
+*/
+
 /// <summary>
 /// Reads the text file located at provided path and returns a vector of strings of which each entry is a line in the file
 /// </summary>

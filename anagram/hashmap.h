@@ -1,10 +1,17 @@
 #pragma once
+/*
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#include <boost/serialization/vector.hpp>
+*/
 #include <unordered_map>
 #include <vector>
 #include <string>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
 using namespace filesystem;
@@ -28,6 +35,11 @@ public:
 	file_time_type getFile_last_modified();
 	hashmap();
 	
+	/*
+	void write();
+	void load();
+	*/
+
 	static vector<string>* loadVocab(const path&);
 	static void build(hashmap* const&);
 };
