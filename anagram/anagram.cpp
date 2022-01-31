@@ -127,7 +127,7 @@ string parseInput(string input)
 		}
 		else {									// any other characters are not allowed
 			invalid_argument = true;
-			if (invalid_chars.find(c) != string::npos) {		// if c is not yet in invalid_chars
+			if (invalid_chars.find(c) != string::npos) {	// if c is not yet in invalid_chars
 				invalid_chars += c;							// then add c
 			}
 		}
@@ -156,7 +156,28 @@ string parseInput(string input)
 	return parsedInput;
 }
 
-void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false) {
+string maskString(string& str, int mask[])
+{
+	int size = sizeof(mask) / sizeof(mask[0]);
+	string sub_str;
+	for (int i = 0; i < size; i++) {
+		if (mask[i] == 1)
+			sub_str += str.at(i);
+	}
+	return sub_str;
+}
+
+// deprecates finAndLogAnagrams
+void solveAnagrams(hashmap& hashmap, string input, bool debug = false)
+{
+	int n = (1 << input.length());
+	for (int mask = 1; mask < n; mask++) {
+		// should be int array
+	}
+}
+
+void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false)
+{
 	clock_t t = clock();
 	auto anagramMap = hashmap.getAnagramMap();
 	string key = input;
