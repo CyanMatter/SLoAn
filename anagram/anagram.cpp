@@ -43,7 +43,20 @@ int main(int argc, char* argv[])
 		try {
 			hashmap::build(map);
 		}
-		catch (invalid_argument) {
+		catch (invalid_argument& e) {
+			cout << e.what();
+			while (bool query = true) {
+				char input[1];
+				cout << endl << "Retry? (y/n): ";
+				cin >> input;
+				if (tolower(input[0]) == 'y') {
+					query = false;
+				}
+				else if (tolower(input[0]) == 'n') {
+					cout << endl << "Program closed";
+					EXIT_SUCCESS;
+				}
+			}
 			continue;
 		}
 		lookingForFile = false;
@@ -52,6 +65,8 @@ int main(int argc, char* argv[])
 
 		if (debug)
 			cout << "Constructed hashmap in approximately " << (float)t / CLOCKS_PER_SEC << "seconds\n";
+
+		map->write();
 	}
 
 	string input = queryInput();

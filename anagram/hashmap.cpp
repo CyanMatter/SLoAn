@@ -32,6 +32,29 @@ path& hashmap::getFile_path()
 {
 	return file_path;
 }
+file_time_type hashmap::getFile_last_modified()
+{
+	return file_last_modified;
+}
+
+void hashmap::write()
+{
+	ofstream file ("output.txt", ios::out);
+	if (file.is_open()) {
+		file << *this << endl;
+		file.close();
+	}
+	else
+		cout << "Unable to open file";
+}
+
+ofstream& operator<<(ofstream& ofs, hashmap map)
+{
+	//!WIP there is no definition of << for unordered_map yet!
+	//ofs << map.getAnagramMap();
+	return ofs;
+}
+
 
 // WIP try to build boost serialize at home
 // https://stackoverflow.com/questions/21141243/how-to-build-boost-serialization-library/21141851

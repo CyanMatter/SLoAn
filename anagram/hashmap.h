@@ -32,13 +32,9 @@ public:
 	void updateMap_last_modified();
 	void setFile(const path&);
 	path& getFile_path();
+	void write();
 	file_time_type getFile_last_modified();
 	hashmap();
-	
-	/*
-	void write();
-	void load();
-	*/
 
 	static vector<string>* loadVocab(const path&);
 	static void build(hashmap* const&);
