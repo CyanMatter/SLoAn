@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 			EXIT_FAILURE;
 		}
 
-		(*map).setFile(absolute_path_to_wordlist);
+		map->setFile(absolute_path_to_wordlist);
 		cout << "Loading " << absolute_path_to_wordlist << "...";
 		clock_t t = clock();
 		try {
@@ -66,7 +66,8 @@ int main(int argc, char* argv[])
 		if (debug)
 			cout << "Constructed hashmap in approximately " << (float)t / CLOCKS_PER_SEC << "seconds\n";
 
-		map->write();
+		string filename = map->getFile_path().filename().string();
+		map->write(filename);
 	}
 
 	string input = queryInput();

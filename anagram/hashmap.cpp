@@ -36,25 +36,68 @@ file_time_type hashmap::getFile_last_modified()
 {
 	return file_last_modified;
 }
-
-void hashmap::write()
+int hashmap::getLongestWord()
 {
-	ofstream file ("output.txt", ios::out);
-	if (file.is_open()) {
-		file << *this << endl;
-		file.close();
-	}
-	else
-		cout << "Unable to open file";
+	return longestWord;
+}
+void hashmap::setLongestWord(int x)
+{
+	longestWord = x;
+	updateMap_last_modified();
 }
 
 ofstream& operator<<(ofstream& ofs, hashmap map)
 {
-	//!WIP there is no definition of << for unordered_map yet!
-	//ofs << map.getAnagramMap();
+	//!WIP also include the other fields
+	ofs << map.unordered_map_as_string();
 	return ofs;
 }
 
+void hashmap::write(string& filename)
+{
+	try {
+		path filepath = "db/bin/" + filename + ".dat";//!WIP can't find location
+		ofstream file(filepath, ios::out);
+		if (file.is_open()) {
+			file << *this
+				<< endl;
+			file.close();
+		}
+		else
+			cout << "Could not write to disk. Unable to open file " << filepath << endl;
+	}
+	catch (ofstream::failure e) {
+		cout << e.what() << endl;
+	}
+}
+
+string hashmap::unordered_map_as_string()
+{
+	//!WIP potential optimization https://stackoverflow.com/questions/48409391/faster-way-to-read-write-a-stdunordered-map-from-to-a-file/48412487#48412487
+	string str = "";
+	unordered_map<string, vector<string>>::iterator iter = anagramMap.begin();
+
+	while (true) {
+		str += iter->first.c_str();
+		str += ':';
+		
+		vector<string> v = iter->second;
+		int i = 0;
+		while (true) {
+			str += v.at(i);
+			i++;
+			if (i != v.size()) str += ',';
+			else break;
+		}
+
+		iter++;
+		if (iter != anagramMap.end()) str += '\n';
+		else break;
+	}
+
+	str += '}';
+	return str;
+}
 
 // WIP try to build boost serialize at home
 // https://stackoverflow.com/questions/21141243/how-to-build-boost-serialization-library/21141851
@@ -85,6 +128,59 @@ void hashmap::load()
 }
 */
 
+// wrapper
+ifstream& getline(ifstream& stream, string& s, Size const buf_size, char const delimiter = '\n')
+{
+	s.resize(buf_size);  assert(s.size() > 1);
+	stream.getline(&s[0], buf_size, delimiter);
+	if (!stream.fail())
+	{
+		Size const n = char_traits<char>::length(&s[0]);
+		s.resize(n);      // Downsizing.
+	}
+	return stream;
+}
+
+vector<string> stringToVector(string& line, char const delimiter = ',')
+{
+	vector<string> v;
+	size_t start = 0, end = 0;
+
+	if (line == "ales,leas,sale,seal") {
+		int a = 0;
+	}
+
+	while (end != string::npos) {
+		end = line.find(delimiter, start);
+		v.push_back(line.substr(start, end-start));
+		start = end + 1;
+	}
+
+	return v;
+}
+
+void hashmap::read(hashmap* const& map, string filepath)
+{
+	try {
+		ifstream file(filepath, ios::in);
+		unordered_map<string, vector<string>> anagramMap = {};
+		
+		for (string line; getline(file, line, *(new Size(64)));) {
+			size_t split = line.find(':');
+			string key = line.substr(0, split);
+			line.erase(0, split+1);
+			vector<string> anagrams = stringToVector(line);
+			anagramMap[key] = anagrams;
+		}
+		map->setAnagramMap(anagramMap);
+	}
+	catch (ifstream::failure e) {
+		cout << e.what() << endl;
+	}
+	
+	return;
+}
+
 /// <summary>
 /// Reads the text file located at provided path and returns a vector of strings of which each entry is a line in the file
 /// </summary>
@@ -102,7 +198,7 @@ vector<string>* hashmap::loadVocab(const path& path)
 	}
 
 	while (getline(input_file, word)) {
-		(*lines).push_back(word);
+		lines->push_back(word);
 	}
 	input_file.close();
 
@@ -110,8 +206,9 @@ vector<string>* hashmap::loadVocab(const path& path)
 }
 
 void hashmap::build(hashmap* const& map) {
-	vector<string>* vocab = loadVocab((*map).getFile_path());
+	vector<string>* vocab = loadVocab(map->getFile_path());
 	unordered_map<string, vector<string>> anagramMap = {};
+	int longestWord = 0;
 
 	for (int i = 0; i < (*vocab).size(); i++) {
 		string word = (*vocab)[i];						// for each word in vocabulary
@@ -121,6 +218,7 @@ void hashmap::build(hashmap* const& map) {
 
 		string key = word;								// copy the word to new variable
 		sort(key.begin(), key.end());					// alphabetically sort key
+		if (key[0] == '%') key = key.substr(1);			// eliminate '%' (indicating a multiple) from key
 
 		vector<string> anagrams;						// initialize empty vector
 		if (anagramMap.find(key) != anagramMap.end()) {	// if key already exists in map
@@ -128,9 +226,13 @@ void hashmap::build(hashmap* const& map) {
 		}
 		anagrams.insert(anagrams.end(), word);			// add 'word' to the array of its anagrams
 		anagramMap[key] = anagrams;						// store it in the hashmap
+
+		if (word.length() > longestWord)
+			longestWord = word.length();				// update longest word size
 	}
 	
-	(*map).setAnagramMap(anagramMap);
+	map->setAnagramMap(anagramMap);
+	map->setLongestWord(longestWord);
 	return;
 }
 ;
