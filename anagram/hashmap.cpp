@@ -25,16 +25,11 @@ void hashmap::updateMap_last_modified()
 void hashmap::setFile(const path& absolute_path)
 {
 	file_path = absolute_path;
-	file_last_modified = last_write_time(absolute_path);
 	updateMap_last_modified();
 }
 path& hashmap::getFile_path()
 {
 	return file_path;
-}
-file_time_type hashmap::getFile_last_modified()
-{
-	return file_last_modified;
 }
 int hashmap::getLongestWord()
 {
@@ -48,15 +43,30 @@ void hashmap::setLongestWord(int x)
 
 ofstream& operator<<(ofstream& ofs, hashmap map)
 {
-	//!WIP also include the other fields
-	ofs << map.unordered_map_as_string();
+	// Convert map_last_modified to string
+	time_t t = chrono::system_clock::to_time_t(map.getMap_last_modified());
+	char map_last_modified[64];
+	ctime_s(map_last_modified, sizeof(map_last_modified), &t);
+
+	// Insert in output stream
+	ofs	<< "map_last_modified=" << endl << map_last_modified
+		<< "file_path=" << endl << map.getFile_path().string() << endl
+		<< "longestWord=" << endl << map.getLongestWord() << endl
+		<< "anagramMap={" << endl << map.unordered_map_as_string() << endl << '}';
 	return ofs;
+}
+
+path newFilepath(string& filename)
+{
+	//path filepath = "db/bin/" + filename.substr(filename.find_last_of('.')) + ".dat";//TODO can't find location
+	path filepath = filename.substr(0, filename.find_last_of('.')) + ".dat";
+	return filepath;
 }
 
 void hashmap::write(string& filename)
 {
 	try {
-		path filepath = "db/bin/" + filename + ".dat";//!WIP can't find location
+		path filepath = newFilepath(filename);
 		ofstream file(filepath, ios::out);
 		if (file.is_open()) {
 			file << *this
@@ -73,7 +83,7 @@ void hashmap::write(string& filename)
 
 string hashmap::unordered_map_as_string()
 {
-	//!WIP potential optimization https://stackoverflow.com/questions/48409391/faster-way-to-read-write-a-stdunordered-map-from-to-a-file/48412487#48412487
+	//TODO potential optimization https://stackoverflow.com/questions/48409391/faster-way-to-read-write-a-stdunordered-map-from-to-a-file/48412487#48412487
 	string str = "";
 	unordered_map<string, vector<string>>::iterator iter = anagramMap.begin();
 
@@ -99,36 +109,6 @@ string hashmap::unordered_map_as_string()
 	return str;
 }
 
-// WIP try to build boost serialize at home
-// https://stackoverflow.com/questions/21141243/how-to-build-boost-serialization-library/21141851
-// https://www.boost.org/doc/libs/1_78_0/tools/build/doc/html/index.html#bbv2.overview.invocation
-// https://www.boost.org/doc/libs/1_78_0/more/getting_started/windows.html#prepare-to-use-a-boost-library-binary
-/*
-void hashmap::write()
-{
-	ofstream ofs("hashmap");
-	boost::archive::binary_oarchive oa(ofs);
-	oa << this->anagramMap;
-}
-
-void hashmap::load()
-{
-	this->anagramMap = {};
-	{
-		ifstream ifs("hashmap");
-		boost::archive::binary_iarchive ia(ifs);
-		ia >> this->anagramMap;
-	}
-
-	for (auto& p : this->anagramMap) {
-		cout << p.first << " -> { ";
-		copy(p.second.begin(), p.second.end(), ostream_iterator<string>(cout, " "));
-		cout << "}\n";
-	}
-}
-*/
-
-// wrapper
 ifstream& getline(ifstream& stream, string& s, Size const buf_size, char const delimiter = '\n')
 {
 	s.resize(buf_size);  assert(s.size() > 1);
@@ -146,10 +126,6 @@ vector<string> stringToVector(string& line, char const delimiter = ',')
 	vector<string> v;
 	size_t start = 0, end = 0;
 
-	if (line == "ales,leas,sale,seal") {
-		int a = 0;
-	}
-
 	while (end != string::npos) {
 		end = line.find(delimiter, start);
 		v.push_back(line.substr(start, end-start));
@@ -159,26 +135,46 @@ vector<string> stringToVector(string& line, char const delimiter = ',')
 	return v;
 }
 
+void readAnagramMap(hashmap* const& map, ifstream& file)
+{
+	unordered_map<string, vector<string>> anagramMap = {};
+
+	for (string line; line != "}"; getline(file, line)) {
+		size_t split = line.find(':');
+		string key = line.substr(0, split);
+		line.erase(0, split + 1);
+		vector<string> anagrams = stringToVector(line);
+		anagramMap[key] = anagrams;
+	}
+
+	map->setAnagramMap(anagramMap);
+}
+
 void hashmap::read(hashmap* const& map, string filepath)
 {
 	try {
 		ifstream file(filepath, ios::in);
-		unordered_map<string, vector<string>> anagramMap = {};
-		
-		for (string line; getline(file, line, *(new Size(64)));) {
-			size_t split = line.find(':');
-			string key = line.substr(0, split);
-			line.erase(0, split+1);
-			vector<string> anagrams = stringToVector(line);
-			anagramMap[key] = anagrams;
+		for (string line; getline(file, line);) {
+			if (line == "map_last_modified=") {
+				getline(file, line);
+				//TODO choose time_t as time standard. not chrono::system_clock::time_point
+			}
+			else if (line == "file_path=") {
+				getline(file, line);
+				map->setFile((path) line);
+			}
+			else if (line == "longestWord=") {
+				getline(file, line);
+				map->setLongestWord(stoi(line));
+			}
+			else if (line == "anagramMap={") {
+				readAnagramMap(map, file);
+			}
 		}
-		map->setAnagramMap(anagramMap);
 	}
 	catch (ifstream::failure e) {
 		cout << e.what() << endl;
 	}
-	
-	return;
 }
 
 /// <summary>

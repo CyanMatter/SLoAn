@@ -26,8 +26,6 @@ private:
 	unordered_map<string, vector<string>> anagramMap;
 	chrono::system_clock::time_point map_last_modified;
 	path file_path;
-	//path name;
-	file_time_type file_last_modified;
 	int longestWord;
 
 public:
@@ -40,7 +38,6 @@ public:
 	void write(string& filename);
 	friend ofstream& operator<<(ofstream& ofs, hashmap map);
 	string unordered_map_as_string();
-	file_time_type getFile_last_modified();
 	int getLongestWord();
 	void setLongestWord(int x);
 	hashmap();
