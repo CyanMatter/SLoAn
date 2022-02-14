@@ -14,13 +14,13 @@ void hashmap::setAnagramMap(unordered_map<string, vector<string>> map)
 	anagramMap = map;
 	updateMap_last_modified();
 }
-chrono::system_clock::time_point hashmap::getMap_last_modified()
+time_t hashmap::getMap_last_modified()
 {
 	return map_last_modified;
 }
 void hashmap::updateMap_last_modified()
 {
-	map_last_modified = chrono::system_clock::now();
+	time(&map_last_modified);
 }
 void hashmap::setFile(const path& absolute_path)
 {
