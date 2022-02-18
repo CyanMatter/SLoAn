@@ -5,6 +5,15 @@ hashmap::hashmap()
 	updateMap_last_modified();
 }
 
+template <typename TP>
+time_t to_time_t(TP tp)
+{
+	using namespace chrono;
+	auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+		+ system_clock::now());
+	return system_clock::to_time_t(sctp);
+}
+
 unordered_map<string, vector<string>>& hashmap::getAnagramMap()
 {
 	return anagramMap;
@@ -18,14 +27,26 @@ time_t hashmap::getMap_last_modified()
 {
 	return map_last_modified;
 }
+void hashmap::setMap_last_modified(time_t t)
+{
+	map_last_modified = t;
+}
 void hashmap::updateMap_last_modified()
 {
 	time(&map_last_modified);
 }
+time_t hashmap::getFile_last_modified()
+{
+	return file_last_modified;
+}
+void hashmap::setFile_last_modified(time_t t)
+{
+	file_last_modified = t;
+}
 void hashmap::setFile(const path& absolute_path)
 {
 	file_path = absolute_path;
-	updateMap_last_modified();
+	setFile_last_modified(to_time_t(last_write_time(absolute_path)));
 }
 path& hashmap::getFile_path()
 {
@@ -41,36 +62,27 @@ void hashmap::setLongestWord(int x)
 	updateMap_last_modified();
 }
 
-ofstream& operator<<(ofstream& ofs, hashmap map)
+ofstream& operator<<(ofstream& ofs, hashmap& map)
 {
-	// Convert map_last_modified to string
-	time_t t = chrono::system_clock::to_time_t(map.getMap_last_modified());
-	char map_last_modified[64];
-	ctime_s(map_last_modified, sizeof(map_last_modified), &t);
-
-	// Insert in output stream
-	ofs	<< "map_last_modified=" << endl << map_last_modified
+	ofs << "file_last_modified=" << endl << map.getFile_last_modified() << endl
+		<< "map_last_modified=" << endl << map.getMap_last_modified() << endl
 		<< "file_path=" << endl << map.getFile_path().string() << endl
 		<< "longestWord=" << endl << map.getLongestWord() << endl
 		<< "anagramMap={" << endl << map.unordered_map_as_string() << endl << '}';
 	return ofs;
 }
 
-path newFilepath(string& filename)
-{
-	//path filepath = "db/bin/" + filename.substr(filename.find_last_of('.')) + ".dat";//TODO can't find location
-	path filepath = filename.substr(0, filename.find_last_of('.')) + ".dat";
-	return filepath;
-}
-
 void hashmap::write(string& filename)
 {
 	try {
-		path filepath = newFilepath(filename);
-		ofstream file(filepath, ios::out);
+		path filepath = current_path() / "db" / "maps";
+		if (!exists(filepath))
+			create_directories(filepath);
+
+		filepath /= filename.substr(0, filename.find_last_of('.')) + ".dat";
+		ofstream file(filepath, ios::binary | ios::out);
 		if (file.is_open()) {
-			file << *this
-				<< endl;
+			file.write(reinterpret_cast<const char*>(&(*this)), sizeof(*this));
 			file.close();
 		}
 		else
@@ -79,6 +91,15 @@ void hashmap::write(string& filename)
 	catch (ofstream::failure e) {
 		cout << e.what() << endl;
 	}
+}
+
+time_t hashmap::string_as_time_t(string& str)
+{
+	time_t t;
+	stringstream ss;
+	ss << str;
+	ss >> t;
+	return t;
 }
 
 string hashmap::unordered_map_as_string()
@@ -150,14 +171,17 @@ void readAnagramMap(hashmap* const& map, ifstream& file)
 	map->setAnagramMap(anagramMap);
 }
 
-void hashmap::read(hashmap* const& map, string filepath)
+void hashmap::read(hashmap* const& map, ifstream& file)
 {
 	try {
-		ifstream file(filepath, ios::in);
 		for (string line; getline(file, line);) {
-			if (line == "map_last_modified=") {
+			if (line == "file_last_modified=") {
 				getline(file, line);
-				//TODO choose time_t as time standard. not chrono::system_clock::time_point
+				map->setFile_last_modified(string_as_time_t(line));
+			}
+			else if (line == "map_last_modified") {
+				getline(file, line);
+				map->setMap_last_modified(string_as_time_t(line));
 			}
 			else if (line == "file_path=") {
 				getline(file, line);
@@ -201,7 +225,11 @@ vector<string>* hashmap::loadVocab(const path& path)
 	return lines;
 }
 
-void hashmap::build(hashmap* const& map) {
+void hashmap::build(hashmap* const& map)
+{
+	if (storedIsValid(map))								// if a stored version of this wordlist exists, and it is up-to-date,
+		return;											// then build the map from there instead
+
 	vector<string>* vocab = loadVocab(map->getFile_path());
 	unordered_map<string, vector<string>> anagramMap = {};
 	int longestWord = 0;
@@ -230,5 +258,48 @@ void hashmap::build(hashmap* const& map) {
 	map->setAnagramMap(anagramMap);
 	map->setLongestWord(longestWord);
 	return;
+}
+
+bool hashmap::storedIsValid(hashmap* const& map)
+{	
+	path wordlistPath = map->getFile_path();
+	path mapName = wordlistPath.stem();
+	mapName += ".dat";
+	path mapPath = current_path() / "db" / "maps" / mapName;
+
+	if (!exists(mapPath))
+		return false;
+	
+	time_t wordlist_last_modified = to_time_t(last_write_time(wordlistPath));
+	time_t map_last_modified = to_time_t(last_write_time(mapPath));
+
+	ifstream file(mapPath, ios::binary | ios::in);
+
+	if (wordlist_last_modified < map_last_modified) {
+		read(map, file);
+		return true;
+	}
+
+	time_t file_last_modified_for_map = read_file_last_modified_for_map(map, file);
+	if (wordlist_last_modified < file_last_modified_for_map) {
+		read(map, file);
+		return true;
+	}
+	else 
+		return false;
+}
+
+time_t hashmap::read_file_last_modified_for_map(hashmap* const& map, ifstream& file)
+{
+	string line;
+	getline(file, line);
+	if (line == "file_last_modified=") {						// This should be the first line in the file
+		getline(file, line);
+		time_t file_last_modified_for_map = string_as_time_t(line);
+		map->setFile_last_modified(file_last_modified_for_map);
+		return file_last_modified_for_map;
+	}
+	else
+		throw new invalid_argument("Unable to read the first line of input file");
 }
 ;
