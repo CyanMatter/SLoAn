@@ -25,7 +25,7 @@ void findAndLogAnagrams(hashmap anagramMap, string input, bool debug);
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
-	string path_to_wordlist = "db\\2of12inf.txt";
+	string path_to_wordlist = "db\\2of12.txt";
 	hashmap* const& map = new hashmap();
 
 	bool lookingForFile = true;
@@ -67,7 +67,9 @@ int main(int argc, char* argv[])
 			cout << "Constructed hashmap in approximately " << (float)t / CLOCKS_PER_SEC << "seconds\n";
 
 		string filename = map->getFile_path().filename().string();
-		map->write(filename);
+		if (map->isModified() || !map->isSaved()) {
+			map->write(filename);
+		}
 	}
 
 	string input = queryInput();
@@ -208,16 +210,23 @@ void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false)
 		cout << "\n";
 	}
 	else {
+		bool inputInList = false;
 		vector<string> anagrams = iterator->second;
 		vector<string>::iterator input_index = find(anagrams.begin(), anagrams.end(), input);		// try to find input text in anagrams
 		if (input_index != anagrams.end()) {														// in case input text in anagrams
 			anagrams.erase(input_index);															// filter input text from anagrams
+			inputInList = true;
 		}
 
 		const unsigned int size = anagrams.size();
 		cout << size << " anagram" << ((size != 1) ? "s" : "") << " found";
-		if (debug)
+		if (debug) {
 			printf(" in approximately %f seconds", t / CLOCKS_PER_SEC);
+			string found_str = "Input text is";
+			found_str += inputInList ? " " : " not ";
+			found_str += "found in the current list";
+			printf((char*) &found_str);
+		}
 		cout << "\n";
 		for (string word : anagrams) {
 			if (word != input) {

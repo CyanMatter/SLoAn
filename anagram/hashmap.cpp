@@ -2,7 +2,8 @@
 
 hashmap::hashmap()
 {
-	updateMap_last_modified();
+	map_last_modified = file_last_modified;
+	modified = false;
 }
 
 template <typename TP>
@@ -21,7 +22,6 @@ unordered_map<string, vector<string>>& hashmap::getAnagramMap()
 void hashmap::setAnagramMap(unordered_map<string, vector<string>> map)
 {
 	anagramMap = map;
-	updateMap_last_modified();
 }
 time_t hashmap::getMap_last_modified()
 {
@@ -34,6 +34,7 @@ void hashmap::setMap_last_modified(time_t t)
 void hashmap::updateMap_last_modified()
 {
 	time(&map_last_modified);
+	modified = true;
 }
 time_t hashmap::getFile_last_modified()
 {
@@ -47,10 +48,19 @@ void hashmap::setFile(const path& absolute_path)
 {
 	file_path = absolute_path;
 	setFile_last_modified(to_time_t(last_write_time(absolute_path)));
+
+	path wordlistPath = file_path;
+	path mapName = wordlistPath.stem();
+	mapName += ".dat";
+	map_path = current_path() / "db" / "maps" / mapName;
 }
 path& hashmap::getFile_path()
 {
 	return file_path;
+}
+path& hashmap::getMap_path()
+{
+	return map_path;
 }
 int hashmap::getLongestWord()
 {
@@ -59,7 +69,14 @@ int hashmap::getLongestWord()
 void hashmap::setLongestWord(int x)
 {
 	longestWord = x;
-	updateMap_last_modified();
+}
+bool hashmap::isModified()
+{
+	return modified;
+}
+bool hashmap::isSaved()
+{
+	return exists(map_path);
 }
 
 ofstream& operator<<(ofstream& ofs, hashmap& map)
@@ -80,9 +97,9 @@ void hashmap::write(string& filename)
 			create_directories(filepath);
 
 		filepath /= filename.substr(0, filename.find_last_of('.')) + ".dat";
-		ofstream file(filepath, ios::binary | ios::out);
+		ofstream file(filepath, ios::out);
 		if (file.is_open()) {
-			file.write(reinterpret_cast<const char*>(&(*this)), sizeof(*this));
+			file << *this;
 			file.close();
 		}
 		else
@@ -261,11 +278,9 @@ void hashmap::build(hashmap* const& map)
 }
 
 bool hashmap::storedIsValid(hashmap* const& map)
-{	
-	path wordlistPath = map->getFile_path();
-	path mapName = wordlistPath.stem();
-	mapName += ".dat";
-	path mapPath = current_path() / "db" / "maps" / mapName;
+{
+	path wordlistPath = map->file_path;
+	path mapPath = map->map_path;
 
 	if (!exists(mapPath))
 		return false;
@@ -273,7 +288,7 @@ bool hashmap::storedIsValid(hashmap* const& map)
 	time_t wordlist_last_modified = to_time_t(last_write_time(wordlistPath));
 	time_t map_last_modified = to_time_t(last_write_time(mapPath));
 
-	ifstream file(mapPath, ios::binary | ios::in);
+	ifstream file(mapPath, ios::in);
 
 	if (wordlist_last_modified < map_last_modified) {
 		read(map, file);

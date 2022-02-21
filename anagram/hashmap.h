@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <assert.h>
 #include <stddef.h>
 
@@ -26,7 +27,9 @@ private:
 	time_t map_last_modified;
 	time_t file_last_modified;
 	path file_path;
+	path map_path;
 	int longestWord;
+	bool modified;
 
 public:
 	unordered_map<string, vector<string>>& getAnagramMap();
@@ -38,11 +41,14 @@ public:
 	void setFile_last_modified(time_t t);
 	void setFile(const path&);
 	path& getFile_path();
+	path& getMap_path();
 	void write(string& filename);
 	friend ofstream& operator<<(ofstream& ofs, hashmap& map);
 	string unordered_map_as_string();
 	int getLongestWord();
 	void setLongestWord(int x);
+	bool isModified();
+	bool isSaved();
 	hashmap();
 	
 	static void read(hashmap* const& map, ifstream& file);
