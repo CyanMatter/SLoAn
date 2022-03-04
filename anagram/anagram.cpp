@@ -186,11 +186,29 @@ string maskString(string& str, int mask[])
 }
 
 // deprecates finAndLogAnagrams
-void solveAnagrams(hashmap& hashmap, string input, bool debug = false)
+void solveAnagrams(vector<vector<string>>& keys,  unordered_map<string, vector<string>>& anagramMap, string input, bool debug = false)
 {
-	int n = (1 << input.length());
-	for (int mask = 1; mask < n; mask++) {
-		// should be int array
+	input = parseInput(input);										// allow only permitted characters in input string
+	sort(input.begin(), input.end());								// sort input string in alphabetical order
+	int n = 1 << input.length();									// n is the maximum iterations	
+	for (int mask = 1; mask < n; mask++) {							// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
+		
+		int d = mask;												// d is the dividend
+		int r = 0;													// r is the remainder
+		string subseq_in = "";										// subseq_in is the subsequence of input that is in the current mask
+		string subseq_out = "";										// subseq_out is the subsequence of input that is out the current mask
+
+		while (d > 1) {												// in this loop we read out every binary digit in the binary sequence of mask
+			r = d % 2;												// read out the digit and store in r
+			d >> 1;													// shift to the next (which is the same as: divide by 2)
+			((r == 1) ? subseq_in : subseq_out) = input.at(r);		// store the char in either subseq_in or subseq_out according to the mask
+		}
+		auto iterator = anagramMap.find(subseq_in);					// get all anagrams of subseq_in
+		if (iterator != anagramMap.end()) {							// if there is any anagram at all, then we'll go a recursion deeper
+			// WIP left here
+			keys.push_back(subseq_in);								// store only the key. if the anagrams are added too for easy reference, the call stack might exceed the memory limit
+			solveAnagrams(anagramMap, subseq_out, debug);			// find all sets of keys that together form an anagram of input. if none found, return empty list
+		}
 	}
 }
 
