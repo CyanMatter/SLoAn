@@ -21,9 +21,13 @@
   <ItemGroup>
     <ClCompile Include="anagram.cpp" />
     <ClCompile Include="hashmap.cpp" />
+    <ClCompile Include="keynode.cpp" />
+    <ClCompile Include="keytree.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hashmap.h" />
+    <ClInclude Include="keynode.h" />
+    <ClInclude Include="keytree.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
