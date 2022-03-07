@@ -28,7 +28,7 @@ void findAndLogAnagrams(hashmap hashmap, string input, bool debug);
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
-	string path_to_wordlist = "db\\2of12.txt";
+	string path_to_wordlist = "db\\2of12inf.txt";
 	hashmap* const& map = new hashmap();
 
 	bool lookingForFile = true;
@@ -218,16 +218,19 @@ void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<str
 		
 		int d = mask;													// d is the dividend
 		int r = 0;														// r is the remainder
+		int i = 0;														// i is the index of the current character of input
 		string subseq_in = "";											// subseq_in is the subsequence of input that is in the current mask
 		string subseq_out = "";											// subseq_out is the subsequence of input that is out the current mask
 
-		while (d > 1) {													// in this loop we read out every binary digit in the binary sequence of mask
+		while (d > 0) {													// in this loop we read out every binary digit in the binary sequence of mask
 			r = d % 2;													// read out the digit and store in r
-			d >> 1;														// shift to the next (which is the same as: divide by 2)
-			((r == 1) ? subseq_in : subseq_out) = input.at(r);			// store the char in either subseq_in or subseq_out according to the mask
+			d >>= 1;													// shift to the next (which is the same as: divide by 2)
+			((r == 1) ? subseq_in : subseq_out) = input.at(i);			// store the char in either subseq_in or subseq_out according to the mask
+			i++;														// increment i and iterate
 		}
 		auto iterator = anagramMap->find(subseq_in);					// get all anagrams of subseq_in
 		if (iterator != anagramMap->end()) {							// if there is any anagram at all, then we'll go a recursion deeper
+			subseq_out += input.substr(i+1);							// append remaining characters of input to subseq_out
 			keynode child = tree->addKey(subseq_in, *node);				// store only the key. if the anagrams are added too for easy reference, the call stack might exceed the memory limit
 			solveAnagrams(tree, &child, anagramMap, subseq_out, debug);	// find all sets of keys that together form an anagram of input. if none found, return empty list
 		}

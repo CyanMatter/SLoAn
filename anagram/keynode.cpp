@@ -3,6 +3,7 @@
 keynode::keynode(string key, int depth)
 {
 	this->key = key;
+	this->children = new vector<keynode>();
 	this->leaf = true;
 	this->depth = depth;
 }
