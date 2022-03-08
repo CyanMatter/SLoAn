@@ -29,21 +29,29 @@ string keynode::getKey()
 {
 	return this->key;
 }
-
-void keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq)
+vector<keynode> keynode::getChildren()
 {
-	key_seq.push_back(this->key);
+	return *this->children;
+}
 
+bool keynode::isLeaf()
+{
+	return this->leaf;
+}
+
+void keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq, int index)
+{
+	key_seq[index] = this->key;
 	if (this->leaf) {
-		arr_ptr->push_back(key_seq);
+		(*arr_ptr)[index] = key_seq;
 	}
 	else {
 		if (this->children->size() == 0)
-			this->children->at(0).traversePerNode(arr_ptr, key_seq);
+			this->children->at(0).traversePerNode(arr_ptr, key_seq, index+1);
 		else {
 			for (keynode child : *this->children) {
 				vector<string> key_seq_copy = key_seq;
-				child.traversePerNode(arr_ptr, key_seq_copy);
+				child.traversePerNode(arr_ptr, key_seq_copy, index+1);
 			}
 		}
 	}

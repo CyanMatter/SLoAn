@@ -14,11 +14,13 @@ private:
 	int depth;
 
 public:
+	string getKey();
+	vector<keynode> getChildren();
+	bool isLeaf();
 	int getDepth();
 
 	keynode(string key, int depth);
 	int add(keynode node);
-	string getKey();
-	void traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq);
+	void traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq, int index);
 };
 

@@ -23,7 +23,7 @@ string queryInput();
 string receiveInput(int max);
 string parseInput(string input);
 void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug);
-void findAndLogAnagrams(hashmap hashmap, string input, bool debug);
+//void findAndLogAnagrams(hashmap hashmap, string input, bool debug);
 
 int main(int argc, char* argv[])
 {
@@ -87,6 +87,9 @@ int main(int argc, char* argv[])
 		cout << "Solution " << i << ":" << endl;
 		vector<string> solution = solution_arr[i];
 		for (string key : solution) {
+			if (key == "")
+				break;
+
 			auto iterator = map->getAnagramMap().find(key);
 			vector<string> anagrams = iterator->second;
 			string line = "\t[";
@@ -208,7 +211,6 @@ string maskString(string& str, int mask[])
 	return sub_str;
 }
 
-// deprecates findAndLogAnagrams
 void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug = false)
 {
 	input = parseInput(input);											// allow only permitted characters in input string
@@ -225,18 +227,22 @@ void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<str
 		while (d > 0) {													// in this loop we read out every binary digit in the binary sequence of mask
 			r = d % 2;													// read out the digit and store in r
 			d >>= 1;													// shift to the next (which is the same as: divide by 2)
-			((r == 1) ? subseq_in : subseq_out) = input.at(i);			// store the char in either subseq_in or subseq_out according to the mask
+			((r == 1) ? subseq_in : subseq_out) += input.at(i);			// store the char in either subseq_in or subseq_out according to the mask
 			i++;														// increment i and iterate
 		}
 		auto iterator = anagramMap->find(subseq_in);					// get all anagrams of subseq_in
 		if (iterator != anagramMap->end()) {							// if there is any anagram at all, then we'll go a recursion deeper
-			subseq_out += input.substr(i+1);							// append remaining characters of input to subseq_out
-			keynode child = tree->addKey(subseq_in, *node);				// store only the key. if the anagrams are added too for easy reference, the call stack might exceed the memory limit
+			if (input.size() > i+1)
+				subseq_out += input.substr(i+1);						// if any, append remaining characters of input to subseq_out
+			keynode child = tree->addKey(subseq_in, node);				// store only the key. if the anagrams are added too for easy reference, the call stack might exceed the memory limit
+			if (tree->max_anagrams < iterator->second.size())			// if more anagrams are found for this key than previously known in the keytree
+				tree->max_anagrams = iterator->second.size();			// set this vector size as max for max_anagrams
 			solveAnagrams(tree, &child, anagramMap, subseq_out, debug);	// find all sets of keys that together form an anagram of input. if none found, return empty list
 		}
 	}
 }
 
+/*
 void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false)
 {
 	clock_t t = clock();
@@ -278,3 +284,4 @@ void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false)
 		}
 	}
 }
+*/

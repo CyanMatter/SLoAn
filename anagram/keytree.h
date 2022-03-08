@@ -12,10 +12,11 @@ class keytree
 public:
 	keynode* root;
 	int max_depth;
+	int max_anagrams;
 	int n_leafs;
 
 	keytree();
-	keynode addKey(string key, keynode parent);
+	keynode addKey(string key, keynode* const& parent);
 	vector<vector<string>> traverse();
 };
 
