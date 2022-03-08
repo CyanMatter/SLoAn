@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
 		cout << "Loading " << absolute_path_to_wordlist << "..." << endl;
 		clock_t t = clock();
 		try {
-			hashmap::build(map);
+			hashmap::build(map, debug);
 		}
 		catch (invalid_argument& e) {
 			cout << e.what() << endl;

@@ -46,10 +46,10 @@ public:
 	bool isSaved();
 	hashmap();
 	
-	static void read(hashmap* const& map, ifstream& file);
+	static void read(hashmap* const& map, ifstream& file, bool debug);
 	static vector<string>* loadVocab(const path& path);
-	static void build(hashmap* const& map);
-	static bool storedIsValid(hashmap* const& map);
+	static void build(hashmap* const& map, bool debug);
+	static bool storedIsValid(hashmap* const& map, bool debug);
 	static time_t read_file_last_modified_for_map(hashmap* const& map, ifstream& file);
 	static time_t string_as_time_t(string& str);
 };

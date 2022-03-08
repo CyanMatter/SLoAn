@@ -2,8 +2,6 @@
 
 hashmap::hashmap()
 {
-	map_last_modified = file_last_modified;
-	modified = false;
 }
 
 template <typename TP>
@@ -46,13 +44,15 @@ void hashmap::setFile_last_modified(time_t t)
 }
 void hashmap::setFile(const path& absolute_path)
 {
-	file_path = absolute_path;
-	setFile_last_modified(to_time_t(last_write_time(absolute_path)));
+	if (exists(absolute_path)) {
+		file_path = absolute_path;
+		setFile_last_modified(to_time_t(last_write_time(absolute_path)));
 
-	path wordlistPath = file_path;
-	path mapName = wordlistPath.stem();
-	mapName += ".dat";
-	map_path = current_path() / "db" / "maps" / mapName;
+		path wordlistPath = file_path;
+		path mapName = wordlistPath.stem();
+		mapName += ".dat";
+		map_path = current_path() / "db" / "maps" / mapName;
+	}
 }
 path& hashmap::getFile_path()
 {
@@ -188,7 +188,7 @@ void readAnagramMap(hashmap* const& map, ifstream& file)
 	map->setAnagramMap(anagramMap);
 }
 
-void hashmap::read(hashmap* const& map, ifstream& file)
+void hashmap::read(hashmap* const& map, ifstream& file, bool debug = false)
 {
 	try {
 		for (string line; getline(file, line);) {
@@ -196,7 +196,7 @@ void hashmap::read(hashmap* const& map, ifstream& file)
 				getline(file, line);
 				map->setFile_last_modified(string_as_time_t(line));
 			}
-			else if (line == "map_last_modified") {
+			else if (line == "map_last_modified=") {
 				getline(file, line);
 				map->setMap_last_modified(string_as_time_t(line));
 			}
@@ -216,6 +216,9 @@ void hashmap::read(hashmap* const& map, ifstream& file)
 	catch (ifstream::failure e) {
 		cout << e.what() << endl;
 	}
+
+	if (debug)
+		cout << "Sourced the hashmap from the archived map at " << map->getMap_path() << endl;
 }
 
 /// <summary>
@@ -242,9 +245,9 @@ vector<string>* hashmap::loadVocab(const path& path)
 	return lines;
 }
 
-void hashmap::build(hashmap* const& map)
+void hashmap::build(hashmap* const& map, bool debug = false)
 {
-	if (storedIsValid(map))								// if a stored version of this wordlist exists, and it is up-to-date,
+	if (storedIsValid(map, debug))						// if a stored version of this wordlist exists, and it is up-to-date,
 		return;											// then build the map from there instead
 
 	vector<string>* vocab = loadVocab(map->getFile_path());
@@ -274,10 +277,14 @@ void hashmap::build(hashmap* const& map)
 	
 	map->setAnagramMap(anagramMap);
 	map->setLongestWord(longestWord);
+
+	if (debug)
+		cout << "Sourced the hashmap from the word list located at " << map->getFile_path() << endl;
+
 	return;
 }
 
-bool hashmap::storedIsValid(hashmap* const& map)
+bool hashmap::storedIsValid(hashmap* const& map, bool debug = false)
 {
 	path wordlistPath = map->file_path;
 	path mapPath = map->map_path;
@@ -291,13 +298,13 @@ bool hashmap::storedIsValid(hashmap* const& map)
 	ifstream file(mapPath, ios::in);
 
 	if (wordlist_last_modified < map_last_modified) {
-		read(map, file);
+		read(map, file, debug);
 		return true;
 	}
 
 	time_t file_last_modified_for_map = read_file_last_modified_for_map(map, file);
 	if (wordlist_last_modified < file_last_modified_for_map) {
-		read(map, file);
+		read(map, file, debug);
 		return true;
 	}
 	else 
