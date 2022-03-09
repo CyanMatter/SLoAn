@@ -216,6 +216,7 @@ string maskString(string& str, int mask[])
 
 bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug)
 {
+	bool is_solution = false;
 	int n = 1 << input.length();										// n is the maximum iterations	
 	for (int mask = 1; mask < n; mask++) {								// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
 		
@@ -233,19 +234,23 @@ bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, ve
 		}
 		auto iterator = anagramMap->find(subseq_in);					// get all anagrams of subseq_in
 		if (iterator != anagramMap->end()) {							// if there is any anagram at all, then we'll go a recursion deeper
+			keynode child = keynode(subseq_in, node.depth + 1);			// create a child node containing the key for the known anagram
 			if (input.size() > i)
 				subseq_out += input.substr(i);							// if any, append remaining characters of input to subseq_out
-			keynode child = keynode(subseq_in, node.depth + 1);
-			if (subseq_out.size() == 0) {
-				tree->addChild(child, node);
-				return true;
+			if (subseq_out.size() == 0) {								// if all letters in the input have been used in the sequence
+				tree->addChild(child, node);							// add the new child node to this node
+				return true;											// indicate to caller that a solution has been found
 			}
-			else if (solveAnagrams(tree, child, anagramMap, subseq_out, debug)) {	// find all sets of keys that together form an anagram of input. if none found, return empty list
-				tree->addChild(child, node);
-			}
+			else if (solveAnagrams(tree, child, anagramMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
+				is_solution = true;
+				tree->addChild(child, node);							// then add all those parts to this node
+			}															// continue looking for other solutions
 		}
 	}
-	return false;
+	if (is_solution) {
+		int a = 0;
+	}
+	return is_solution;
 }
 
 /*
