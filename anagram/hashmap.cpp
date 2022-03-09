@@ -188,7 +188,7 @@ void readAnagramMap(hashmap* const& map, ifstream& file)
 	map->setAnagramMap(anagramMap);
 }
 
-void hashmap::read(hashmap* const& map, ifstream& file, bool debug = false)
+void hashmap::read(hashmap* const& map, ifstream& file, bool debug)
 {
 	try {
 		for (string line; getline(file, line);) {
@@ -245,7 +245,7 @@ vector<string>* hashmap::loadVocab(const path& path)
 	return lines;
 }
 
-void hashmap::build(hashmap* const& map, bool debug = false)
+void hashmap::build(hashmap* const& map, bool debug)
 {
 	if (storedIsValid(map, debug))						// if a stored version of this wordlist exists, and it is up-to-date,
 		return;											// then build the map from there instead
@@ -284,7 +284,7 @@ void hashmap::build(hashmap* const& map, bool debug = false)
 	return;
 }
 
-bool hashmap::storedIsValid(hashmap* const& map, bool debug = false)
+bool hashmap::storedIsValid(hashmap* const& map, bool debug)
 {
 	path wordlistPath = map->file_path;
 	path mapPath = map->map_path;

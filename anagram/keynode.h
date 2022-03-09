@@ -10,17 +10,19 @@ class keynode
 private:
 	string key;
 	vector<keynode>* children;
-	bool leaf;
-	int depth;
 
 public:
+	int depth;
+	int n_leafs;
+
 	string getKey();
 	vector<keynode> getChildren();
 	bool isLeaf();
-	int getDepth();
 
+	keynode();
 	keynode(string key, int depth);
-	int add(keynode node);
-	void traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq, int index);
+
+	void add(keynode& node);
+	int traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq, int i, int j=0);
 };
 

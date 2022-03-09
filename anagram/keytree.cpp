@@ -2,32 +2,33 @@
 
 keytree::keytree()
 {
-	this->root = new keynode("", 0);
+	this->root = keynode("", 0);
 	this->max_depth = 0;
-	this->max_anagrams = 0;
-	this->n_leafs = 1;
 }
 
-keynode keytree::addKey(string key, keynode* const& parent)
+keynode keytree::addKey(string key, keynode& parent)
 {
-	int child_depth = parent->getDepth() + 1;
+	int child_depth = parent.depth + 1;
 	keynode child = keynode(key, child_depth);
-	this->n_leafs += parent->add(child);
-	
-	if (child_depth > this->max_depth)
-		this->max_depth = child_depth;
-	
+	this->addChild(child, parent);
 	return child;
+}
+
+void keytree::addChild(keynode child, keynode& parent)
+{
+	parent.add(child);
+	if (child.depth > this->max_depth)
+		this->max_depth = child.depth;
 }
 
 vector<vector<string>> keytree::traverse()
 {
-	vector<vector<string>> out(this->n_leafs);
-	vector<string> key_seq(this->max_depth);
+	vector<vector<string>> arr(this->root.n_leafs);
+	vector<string> seq(this->max_depth);
 
-	for (int i = 0; i < this->n_leafs; i++) {
-		keynode child = root->getChildren()[i];
-		child.traversePerNode(&out, key_seq, i);
+	for (int i_child = 0, i_arr = 0; i_arr < this->root.n_leafs && i_child < this->root.getChildren().size(); i_child++) {
+		keynode child = this->root.getChildren()[i_child];
+		i_arr = child.traversePerNode(&arr, seq, i_arr);
 	}
-	return out;
+	return arr;
 }

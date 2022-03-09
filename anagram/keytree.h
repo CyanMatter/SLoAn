@@ -10,13 +10,12 @@ using namespace std;
 class keytree
 {
 public:
-	keynode* root;
+	keynode root;
 	int max_depth;
-	int max_anagrams;
-	int n_leafs;
 
 	keytree();
-	keynode addKey(string key, keynode* const& parent);
+	keynode addKey(string key, keynode& parent);
+	void addChild(keynode child, keynode& parent);
 	vector<vector<string>> traverse();
 };
 

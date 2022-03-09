@@ -22,7 +22,7 @@ bool fileExists(const string& name);
 string queryInput();
 string receiveInput(int max);
 string parseInput(string input);
-void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug);
+bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug = false);
 //void findAndLogAnagrams(hashmap hashmap, string input, bool debug);
 
 int main(int argc, char* argv[])
@@ -80,12 +80,15 @@ int main(int argc, char* argv[])
 	//findAndLogAnagrams((*map), input, debug);
 
 	keytree* const& tree = new keytree();
-	solveAnagrams(tree, tree->root, &(map->getAnagramMap()), input, debug);
+	string sorted_input = parseInput(input);										// allow only permitted characters in input string
+	sort(sorted_input.begin(), sorted_input.end());									// sort input string in alphabetical order
+	solveAnagrams(tree, tree->root, &(map->getAnagramMap()), sorted_input, debug);
 	vector<vector<string>> solution_arr = tree->traverse();
 
 	for (int i = 0; i < solution_arr.size(); i++) {
 		cout << "Solution " << i << ":" << endl;
 		vector<string> solution = solution_arr[i];
+
 		for (string key : solution) {
 			if (key == "")
 				break;
@@ -211,16 +214,14 @@ string maskString(string& str, int mask[])
 	return sub_str;
 }
 
-void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug = false)
+bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug)
 {
-	input = parseInput(input);											// allow only permitted characters in input string
-	sort(input.begin(), input.end());									// sort input string in alphabetical order
 	int n = 1 << input.length();										// n is the maximum iterations	
 	for (int mask = 1; mask < n; mask++) {								// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
 		
 		int d = mask;													// d is the dividend
 		int r = 0;														// r is the remainder
-		int i = 0;														// i is the index of the current character of input
+		unsigned long long i = 0ull;									// i is the index of the current character of input
 		string subseq_in = "";											// subseq_in is the subsequence of input that is in the current mask
 		string subseq_out = "";											// subseq_out is the subsequence of input that is out the current mask
 
@@ -232,14 +233,19 @@ void solveAnagrams(keytree* const& tree, keynode* const& node, unordered_map<str
 		}
 		auto iterator = anagramMap->find(subseq_in);					// get all anagrams of subseq_in
 		if (iterator != anagramMap->end()) {							// if there is any anagram at all, then we'll go a recursion deeper
-			if (input.size() > i+1)
-				subseq_out += input.substr(i+1);						// if any, append remaining characters of input to subseq_out
-			keynode child = tree->addKey(subseq_in, node);				// store only the key. if the anagrams are added too for easy reference, the call stack might exceed the memory limit
-			if (tree->max_anagrams < iterator->second.size())			// if more anagrams are found for this key than previously known in the keytree
-				tree->max_anagrams = iterator->second.size();			// set this vector size as max for max_anagrams
-			solveAnagrams(tree, &child, anagramMap, subseq_out, debug);	// find all sets of keys that together form an anagram of input. if none found, return empty list
+			if (input.size() > i)
+				subseq_out += input.substr(i);							// if any, append remaining characters of input to subseq_out
+			keynode child = keynode(subseq_in, node.depth + 1);
+			if (subseq_out.size() == 0) {
+				tree->addChild(child, node);
+				return true;
+			}
+			else if (solveAnagrams(tree, child, anagramMap, subseq_out, debug)) {	// find all sets of keys that together form an anagram of input. if none found, return empty list
+				tree->addChild(child, node);
+			}
 		}
 	}
+	return false;
 }
 
 /*

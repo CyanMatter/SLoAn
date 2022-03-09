@@ -1,28 +1,29 @@
 #include "keynode.h"
 
+keynode::keynode()
+{
+	this->key = "";
+	this->children = new vector<keynode>();
+	this->depth = 0;
+	this->n_leafs = 1;
+}
+
 keynode::keynode(string key, int depth)
 {
 	this->key = key;
 	this->children = new vector<keynode>();
-	this->leaf = true;
 	this->depth = depth;
+	this->n_leafs = 1;
 }
 
-int keynode::getDepth()
+void keynode::add(keynode& node)
 {
-	return this->depth;
-}
+	if (this->children->size() > 0)
+		this->n_leafs += node.n_leafs;
+	else if (node.n_leafs > 1)
+		this->n_leafs = node.n_leafs;
 
-int keynode::add(keynode node)
-{
 	this->children->push_back(node);
-
-	if (this->leaf) {
-		this->leaf = false;
-		return 0;				// return 0: 1 leaf node was added but also 1 subtracted to the tree
-	}
-	else
-		return 1;				// return 1: 1 leaf node was added
 }
 
 string keynode::getKey()
@@ -33,26 +34,23 @@ vector<keynode> keynode::getChildren()
 {
 	return *this->children;
 }
-
 bool keynode::isLeaf()
 {
-	return this->leaf;
+	return this->children->size() == 0;
 }
 
-void keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq, int index)
+int keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> seq, int i_arr, int i_seq)
 {
-	key_seq[index] = this->key;
-	if (this->leaf) {
-		(*arr_ptr)[index] = key_seq;
+	seq[i_seq] = this->key;
+	if (this->isLeaf()) {
+		(*arr_ptr)[i_arr] = seq;
 	}
 	else {
-		if (this->children->size() == 0)
-			this->children->at(0).traversePerNode(arr_ptr, key_seq, index+1);
-		else {
-			for (keynode child : *this->children) {
-				vector<string> key_seq_copy = key_seq;
-				child.traversePerNode(arr_ptr, key_seq_copy, index+1);
-			}
+		for (keynode child : *this->children) {
+			vector<string> key_seq_copy = seq;
+			i_arr = child.traversePerNode(arr_ptr, key_seq_copy, i_arr, i_seq+1);
 		}
+		return i_arr;
 	}
+	return i_arr+1;
 }
