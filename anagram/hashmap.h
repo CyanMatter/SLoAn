@@ -9,6 +9,7 @@
 #include <sstream>
 #include <assert.h>
 #include <stddef.h>
+#include "keynode.h"
 
 typedef ptrdiff_t Size;
 
@@ -19,6 +20,7 @@ class hashmap
 {
 private:
 	unordered_map<string, vector<string>> anagramMap;
+	unordered_map<string, keynode* const&> solutionMap;
 	time_t map_last_modified;
 	time_t file_last_modified;
 	path file_path;
@@ -29,6 +31,7 @@ private:
 public:
 	unordered_map<string, vector<string>>& getAnagramMap();
 	void setAnagramMap(unordered_map<string, vector<string>>);
+	unordered_map<string, keynode* const&>& getSolutionMap();
 	time_t getMap_last_modified();
 	void setMap_last_modified(time_t t);
 	void updateMap_last_modified();

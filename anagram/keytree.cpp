@@ -26,9 +26,14 @@ vector<vector<string>> keytree::traverse()
 	vector<vector<string>> arr(this->root.n_leafs);
 	vector<string> seq(this->max_depth);
 
-	for (int i_child = 0, i_arr = 0; i_arr < this->root.n_leafs && i_child < this->root.getChildren().size(); i_child++) {
-		keynode child = this->root.getChildren()[i_child];
+	unordered_map<string, keynode> children = this->root.getChildren();
+	unordered_map<string, keynode>::const_iterator it_child = children.begin();
+	int i_arr = 0;
+
+	while (i_arr < this->root.n_leafs && it_child != children.end()) {
+		keynode child = it_child->second;
 		i_arr = child.traversePerNode(&arr, seq, i_arr);
+		it_child++;
 	}
 	return arr;
 }

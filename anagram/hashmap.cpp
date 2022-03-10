@@ -2,6 +2,7 @@
 
 hashmap::hashmap()
 {
+	this->solutionMap = {};
 }
 
 template <typename TP>
@@ -20,6 +21,10 @@ unordered_map<string, vector<string>>& hashmap::getAnagramMap()
 void hashmap::setAnagramMap(unordered_map<string, vector<string>> map)
 {
 	anagramMap = map;
+}
+unordered_map<string, keynode* const&>& hashmap::getSolutionMap()
+{
+	return solutionMap;
 }
 time_t hashmap::getMap_last_modified()
 {

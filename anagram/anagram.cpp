@@ -22,7 +22,7 @@ bool fileExists(const string& name);
 string queryInput();
 string receiveInput(int max);
 string parseInput(string input);
-bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug = false);
+bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode* const&>* const& solutionMap, string input, bool debug = false);
 //void findAndLogAnagrams(hashmap hashmap, string input, bool debug);
 
 int main(int argc, char* argv[])
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 	keytree* const& tree = new keytree();
 	string sorted_input = parseInput(input);										// allow only permitted characters in input string
 	sort(sorted_input.begin(), sorted_input.end());									// sort input string in alphabetical order
-	solveAnagrams(tree, tree->root, &(map->getAnagramMap()), sorted_input, debug);
+	solveAnagrams(tree, tree->root, &(map->getAnagramMap()), &(map->getSolutionMap()), sorted_input, debug);
 	vector<vector<string>> solution_arr = tree->traverse();
 
 	for (int i = 0; i < solution_arr.size(); i++) {
@@ -214,7 +214,7 @@ string maskString(string& str, int mask[])
 	return sub_str;
 }
 
-bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, string input, bool debug)
+bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode* const&>* const& solutionMap, string input, bool debug)
 {
 	bool is_solution = false;
 	int n = 1 << input.length();										// n is the maximum iterations	
@@ -234,23 +234,21 @@ bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, ve
 		}
 		auto iterator = anagramMap->find(subseq_in);					// get all anagrams of subseq_in
 		if (iterator != anagramMap->end()) {							// if there is any anagram at all, then we'll go a recursion deeper
-			keynode child = keynode(subseq_in, node.depth + 1);			// create a child node containing the key for the known anagram
-			if (input.size() > i)
-				subseq_out += input.substr(i);							// if any, append remaining characters of input to subseq_out
+			const keynode child = keynode(subseq_in, node.depth + 1);	// create a child node containing the key for the known anagram
+			subseq_out += input.substr(i);								// if any, append remaining characters of input to subseq_out
 			if (subseq_out.size() == 0) {								// if all letters in the input have been used in the sequence
 				tree->addChild(child, node);							// add the new child node to this node
+				(*solutionMap)[subseq_in] = &child;						// add a reference to this solution to the map of known solutions
 				return true;											// indicate to caller that a solution has been found
 			}
-			else if (solveAnagrams(tree, child, anagramMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
-				is_solution = true;
+			else if (solveAnagrams(tree, child, anagramMap, solutionMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
+				is_solution = true;										// indicate that this subtree contains at least 1 solution
 				tree->addChild(child, node);							// then add all those parts to this node
+				(*solutionMap)[subseq_in] = &child;						// add a reference to the subtree of solutions to the map of known solutions
 			}															// continue looking for other solutions
 		}
 	}
-	if (is_solution) {
-		int a = 0;
-	}
-	return is_solution;
+	return is_solution;													// tell caller whether this subsequence contains any solutions
 }
 
 /*
