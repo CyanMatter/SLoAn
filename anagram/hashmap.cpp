@@ -20,9 +20,9 @@ unordered_map<string, vector<string>>& hashmap::getAnagramMap()
 }
 void hashmap::setAnagramMap(unordered_map<string, vector<string>> map)
 {
-	anagramMap = map;
+	this->anagramMap = map;
 }
-unordered_map<string, keynode* const&>& hashmap::getSolutionMap()
+unordered_map<string, keynode>& hashmap::getSolutionMap()
 {
 	return solutionMap;
 }
@@ -32,12 +32,12 @@ time_t hashmap::getMap_last_modified()
 }
 void hashmap::setMap_last_modified(time_t t)
 {
-	map_last_modified = t;
+	this->map_last_modified = t;
 }
 void hashmap::updateMap_last_modified()
 {
 	time(&map_last_modified);
-	modified = true;
+	this->modified = true;
 }
 time_t hashmap::getFile_last_modified()
 {
@@ -45,18 +45,18 @@ time_t hashmap::getFile_last_modified()
 }
 void hashmap::setFile_last_modified(time_t t)
 {
-	file_last_modified = t;
+	this->file_last_modified = t;
 }
 void hashmap::setFile(const path& absolute_path)
 {
 	if (exists(absolute_path)) {
-		file_path = absolute_path;
+		this->file_path = absolute_path;
 		setFile_last_modified(to_time_t(last_write_time(absolute_path)));
 
 		path wordlistPath = file_path;
 		path mapName = wordlistPath.stem();
 		mapName += ".dat";
-		map_path = current_path() / "db" / "maps" / mapName;
+		this->map_path = current_path() / "db" / "maps" / mapName;
 	}
 }
 path& hashmap::getFile_path()
@@ -67,13 +67,13 @@ path& hashmap::getMap_path()
 {
 	return map_path;
 }
-int hashmap::getLongestWord()
+size_t hashmap::getLongestWord()
 {
 	return longestWord;
 }
-void hashmap::setLongestWord(int x)
+void hashmap::setLongestWord(size_t x)
 {
-	longestWord = x;
+	this->longestWord = x;
 }
 bool hashmap::isModified()
 {
@@ -257,7 +257,7 @@ void hashmap::build(hashmap* const& map, bool debug)
 
 	vector<string>* vocab = loadVocab(map->getFile_path());
 	unordered_map<string, vector<string>> anagramMap = {};
-	int longestWord = 0;
+	size_t longestWord = 0;
 
 	for (int i = 0; i < (*vocab).size(); i++) {
 		string word = (*vocab)[i];						// for each word in vocabulary

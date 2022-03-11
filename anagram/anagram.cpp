@@ -22,8 +22,7 @@ bool fileExists(const string& name);
 string queryInput();
 string receiveInput(int max);
 string parseInput(string input);
-bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode* const&>* const& solutionMap, string input, bool debug = false);
-//void findAndLogAnagrams(hashmap hashmap, string input, bool debug);
+bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug = false);
 
 int main(int argc, char* argv[])
 {
@@ -77,7 +76,6 @@ int main(int argc, char* argv[])
 	}
 
 	string input = queryInput();
-	//findAndLogAnagrams((*map), input, debug);
 
 	keytree* const& tree = new keytree();
 	string sorted_input = parseInput(input);										// allow only permitted characters in input string
@@ -214,83 +212,40 @@ string maskString(string& str, int mask[])
 	return sub_str;
 }
 
-bool solveAnagrams(keytree* const& tree, keynode& node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode* const&>* const& solutionMap, string input, bool debug)
+bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug)
 {
 	bool is_solution = false;
-	int n = 1 << input.length();										// n is the maximum iterations	
-	for (int mask = 1; mask < n; mask++) {								// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
+	int n = 1 << input.length();											// n is the maximum iterations	
+	for (int mask = 1; mask < n; mask++) {									// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
 		
-		int d = mask;													// d is the dividend
-		int r = 0;														// r is the remainder
-		unsigned long long i = 0ull;									// i is the index of the current character of input
-		string subseq_in = "";											// subseq_in is the subsequence of input that is in the current mask
-		string subseq_out = "";											// subseq_out is the subsequence of input that is out the current mask
+		int d = mask;														// d is the dividend
+		int r = 0;															// r is the remainder
+		unsigned long long i = 0ull;										// i is the index of the current character of input
+		string subseq_in = "";												// subseq_in is the subsequence of input that is in the current mask
+		string subseq_out = "";												// subseq_out is the subsequence of input that is out the current mask
 
-		while (d > 0) {													// in this loop we read out every binary digit in the binary sequence of mask
-			r = d % 2;													// read out the digit and store in r
-			d >>= 1;													// shift to the next (which is the same as: divide by 2)
-			((r == 1) ? subseq_in : subseq_out) += input.at(i);			// store the char in either subseq_in or subseq_out according to the mask
-			i++;														// increment i and iterate
+		while (d > 0) {														// in this loop we read out every binary digit in the binary sequence of mask
+			r = d % 2;														// read out the digit and store in r
+			d >>= 1;														// shift to the next (which is the same as: divide by 2)
+			((r == 1) ? subseq_in : subseq_out) += input.at(i);				// store the char in either subseq_in or subseq_out according to the mask
+			i++;															// increment i and iterate
 		}
-		auto iterator = anagramMap->find(subseq_in);					// get all anagrams of subseq_in
-		if (iterator != anagramMap->end()) {							// if there is any anagram at all, then we'll go a recursion deeper
-			const keynode child = keynode(subseq_in, node.depth + 1);	// create a child node containing the key for the known anagram
-			subseq_out += input.substr(i);								// if any, append remaining characters of input to subseq_out
-			if (subseq_out.size() == 0) {								// if all letters in the input have been used in the sequence
-				tree->addChild(child, node);							// add the new child node to this node
-				(*solutionMap)[subseq_in] = &child;						// add a reference to this solution to the map of known solutions
-				return true;											// indicate to caller that a solution has been found
+		auto iterator = anagramMap->find(subseq_in);						// get all anagrams of subseq_in
+		if (iterator != anagramMap->end()) {								// if there is any anagram at all, then we'll go a recursion deeper
+			keynode child = keynode(subseq_in, (*node).depth + 1);			// create a child node containing the key for the known anagram
+			shared_ptr<keynode> child_ptr = make_shared<keynode>(child);
+			subseq_out += input.substr(i);									// if any, append remaining characters of input to subseq_out
+			if (subseq_out.size() == 0) {									// if all letters in the input have been used in the sequence
+				(*solutionMap)[subseq_in] = child;							// add a node of this solution to the map of known solutions
+				tree->addChild(child_ptr, node);							// add the new child node to this node
+				return true;												// indicate to caller that a solution has been found
 			}
-			else if (solveAnagrams(tree, child, anagramMap, solutionMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
-				is_solution = true;										// indicate that this subtree contains at least 1 solution
-				tree->addChild(child, node);							// then add all those parts to this node
-				(*solutionMap)[subseq_in] = &child;						// add a reference to the subtree of solutions to the map of known solutions
-			}															// continue looking for other solutions
+			else if (solveAnagrams(tree, child_ptr, anagramMap, solutionMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
+				is_solution = true;											// indicate that this subtree contains at least 1 solution
+				(*solutionMap)[subseq_in] = child;							// add the root of the subtree of solutions to the map of known solutions
+				tree->addChild(child_ptr, node);							// then add all those parts to this node
+			}																// continue looking for other solutions
 		}
 	}
-	return is_solution;													// tell caller whether this subsequence contains any solutions
+	return is_solution;														// tell caller whether this subsequence contains any solutions
 }
-
-/*
-void findAndLogAnagrams(hashmap hashmap, string input, bool debug = false)
-{
-	clock_t t = clock();
-	auto anagramMap = hashmap.getAnagramMap();
-	string key = input;
-	sort(key.begin(), key.end());
-	auto iterator = anagramMap.find(key);
-	t = clock() - t;
-	
-	if (iterator == anagramMap.end()) {
-		cout << "0 anagrams found";
-		if (debug)
-			printf(" in approximately %f seconds", t / CLOCKS_PER_SEC);
-		cout << "\n";
-	}
-	else {
-		bool inputInList = false;
-		vector<string> anagrams = iterator->second;
-		vector<string>::iterator input_index = find(anagrams.begin(), anagrams.end(), input);		// try to find input text in anagrams
-		if (input_index != anagrams.end()) {														// in case input text in anagrams
-			anagrams.erase(input_index);															// filter input text from anagrams
-			inputInList = true;
-		}
-
-		const unsigned int size = anagrams.size();
-		cout << size << " anagram" << ((size != 1) ? "s" : "") << " found";
-		if (debug) {
-			printf(" in approximately %f seconds", t / CLOCKS_PER_SEC);
-			string found_str = "Input text is";
-			found_str += inputInList ? " " : " not ";
-			found_str += "found in the current list";
-			printf((char*) &found_str);
-		}
-		cout << "\n";
-		for (string word : anagrams) {
-			if (word != input) {
-				cout << word << "\n";
-			}
-		}
-	}
-}
-*/

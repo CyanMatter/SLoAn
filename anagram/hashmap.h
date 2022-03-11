@@ -20,18 +20,18 @@ class hashmap
 {
 private:
 	unordered_map<string, vector<string>> anagramMap;
-	unordered_map<string, keynode* const&> solutionMap;
+	unordered_map<string, keynode> solutionMap;
 	time_t map_last_modified;
 	time_t file_last_modified;
 	path file_path;
 	path map_path;
-	int longestWord;
+	size_t longestWord;
 	bool modified;
 
 public:
 	unordered_map<string, vector<string>>& getAnagramMap();
 	void setAnagramMap(unordered_map<string, vector<string>>);
-	unordered_map<string, keynode* const&>& getSolutionMap();
+	unordered_map<string, keynode>& getSolutionMap();
 	time_t getMap_last_modified();
 	void setMap_last_modified(time_t t);
 	void updateMap_last_modified();
@@ -43,8 +43,8 @@ public:
 	void write(string& filename);
 	friend ofstream& operator<<(ofstream& ofs, hashmap& map);
 	string unordered_map_as_string();
-	int getLongestWord();
-	void setLongestWord(int x);
+	size_t getLongestWord();
+	void setLongestWord(size_t x);
 	bool isModified();
 	bool isSaved();
 	hashmap();
