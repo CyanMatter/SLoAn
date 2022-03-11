@@ -22,7 +22,7 @@ bool fileExists(const string& name);
 string queryInput();
 string receiveInput(int max);
 string parseInput(string input);
-bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug = false);
+bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node_ptr, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug = false);
 
 int main(int argc, char* argv[])
 {
@@ -212,7 +212,7 @@ string maskString(string& str, int mask[])
 	return sub_str;
 }
 
-bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug)
+bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node_ptr, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug)
 {
 	bool is_solution = false;
 	int n = 1 << input.length();											// n is the maximum iterations	
@@ -230,22 +230,48 @@ bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node, unordered_map
 			((r == 1) ? subseq_in : subseq_out) += input.at(i);				// store the char in either subseq_in or subseq_out according to the mask
 			i++;															// increment i and iterate
 		}
-		auto iterator = anagramMap->find(subseq_in);						// get all anagrams of subseq_in
-		if (iterator != anagramMap->end()) {								// if there is any anagram at all, then we'll go a recursion deeper
-			keynode child = keynode(subseq_in, (*node).depth + 1);			// create a child node containing the key for the known anagram
-			shared_ptr<keynode> child_ptr = make_shared<keynode>(child);
+
+
+		//!compare performance between using solutionMap always vs. only if subseq_in.size() > 2 
+		auto solution_it = solutionMap->find(subseq_in);					// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
+		if (solution_it != solutionMap->end()) {							// if the solution to the problem is known
+			if (solution_it->second.key == "") {							// and if the solution is that there are no anagrams for this sequence (this is stored as an empty string for a key)
+				continue;													// solve the next subsequence
+			}
+			else {															// but if the solution does yield any anagrams,
+				is_solution = true;											// indicate that this subtree contains at least 1 solution
+				shared_ptr<keynode> child_ptr = make_shared<keynode>(solution_it->second);
+				tree->addChild(child_ptr, node_ptr);						// add a reference to the existing child node to the tree
+				continue;													// solve the next subsequence
+			}
+		}
+
+		auto anagram_it = anagramMap->find(subseq_in);						// get all anagrams of subseq_in
+		if (anagram_it != anagramMap->end()) {								// if there is any anagram at all, then we'll go a recursion deeper
+			keynode child = keynode(subseq_in, (*node_ptr).depth + 1);		// create a child node containing the key for the known anagram
+			shared_ptr<keynode> child_ptr = make_shared<keynode>(child);	// make a shared pointer, which has possession over the object it points to
 			subseq_out += input.substr(i);									// if any, append remaining characters of input to subseq_out
 			if (subseq_out.size() == 0) {									// if all letters in the input have been used in the sequence
+				tree->addChild(child_ptr, node_ptr);						// add the new child node to this node
 				(*solutionMap)[subseq_in] = child;							// add a node of this solution to the map of known solutions
-				tree->addChild(child_ptr, node);							// add the new child node to this node
 				return true;												// indicate to caller that a solution has been found
 			}
 			else if (solveAnagrams(tree, child_ptr, anagramMap, solutionMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
 				is_solution = true;											// indicate that this subtree contains at least 1 solution
+				tree->addChild(child_ptr, node_ptr);						// then add all those parts to this node
 				(*solutionMap)[subseq_in] = child;							// add the root of the subtree of solutions to the map of known solutions
-				tree->addChild(child_ptr, node);							// then add all those parts to this node
 			}																// continue looking for other solutions
+			else {
+				(*solutionMap)[subseq_in] = keynode();						// add the "no anagram" solution to the map for this key
+			}
 		}
+		else {																// if there is ultimately no anagrams found for input
+			(*solutionMap)[subseq_in] = keynode();							// add the "no anagram" solution to the map for this key
+		}
+	}
+
+	if (!is_solution) {														// if there is ultimately no anagrams found for input
+		(*solutionMap)[input] = keynode();									// add the "no anagram" solution to the map for this key
 	}
 	return is_solution;														// tell caller whether this subsequence contains any solutions
 }
