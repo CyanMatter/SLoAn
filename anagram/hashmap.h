@@ -20,7 +20,7 @@ class hashmap
 {
 private:
 	unordered_map<string, vector<string>> anagramMap;
-	unordered_map<string, keynode> solutionMap;
+	unordered_map<string, vector<shared_ptr<keynode>>> solutionMap;
 	time_t map_last_modified;
 	time_t file_last_modified;
 	path file_path;
@@ -29,9 +29,9 @@ private:
 	bool modified;
 
 public:
-	unordered_map<string, vector<string>>& getAnagramMap();
+	unordered_map<string, vector<string>>* getAnagramMap();
 	void setAnagramMap(unordered_map<string, vector<string>>);
-	unordered_map<string, keynode>& getSolutionMap();
+	unordered_map<string, vector<shared_ptr<keynode>>>* getSolutionMap();
 	time_t getMap_last_modified();
 	void setMap_last_modified(time_t t);
 	void updateMap_last_modified();
@@ -47,6 +47,10 @@ public:
 	void setLongestWord(size_t x);
 	bool isModified();
 	bool isSaved();
+	shared_ptr<keynode> addSolution(const string solution_key, const string node_key, const int node_depth);
+	void addSolution(const string solution_key, shared_ptr<keynode> node_ptr);
+	void addEmptySolution(const string key, const int min_solution_length);
+
 	hashmap();
 	
 	static void read(hashmap* const& map, ifstream& file, bool debug = false);

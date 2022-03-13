@@ -14,17 +14,17 @@ time_t to_time_t(TP tp)
 	return system_clock::to_time_t(sctp);
 }
 
-unordered_map<string, vector<string>>& hashmap::getAnagramMap()
+unordered_map<string, vector<string>>* hashmap::getAnagramMap()
 {
-	return anagramMap;
+	return &anagramMap;
 }
 void hashmap::setAnagramMap(unordered_map<string, vector<string>> map)
 {
 	this->anagramMap = map;
 }
-unordered_map<string, keynode>& hashmap::getSolutionMap()
+unordered_map<string, vector<shared_ptr<keynode>>>* hashmap::getSolutionMap()
 {
-	return solutionMap;
+	return &solutionMap;
 }
 time_t hashmap::getMap_last_modified()
 {
@@ -92,6 +92,24 @@ ofstream& operator<<(ofstream& ofs, hashmap& map)
 		<< "longestWord=" << endl << map.getLongestWord() << endl
 		<< "anagramMap={" << endl << map.unordered_map_as_string() << endl << '}';
 	return ofs;
+}
+
+shared_ptr<keynode> hashmap::addSolution(const string solution_key, const string node_key, const int node_depth)
+{
+	shared_ptr<keynode> node_ptr = make_shared<keynode>(keynode(node_key, node_depth));
+	this->addSolution(solution_key, node_ptr);
+	return node_ptr;
+}
+
+void hashmap::addSolution(const string solution_key, shared_ptr<keynode> node_ptr)
+{
+	this->solutionMap[solution_key].push_back(node_ptr);
+}
+
+void hashmap::addEmptySolution(const string key, const int min_solution_length)
+{
+	if (key.size() >= min_solution_length)
+		this->solutionMap[key] = vector<shared_ptr<keynode>>();
 }
 
 void hashmap::write(string& filename)

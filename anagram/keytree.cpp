@@ -3,29 +3,20 @@
 keytree::keytree()
 {
 	this->root = make_shared<keynode>(keynode("", 0));
-	this->max_depth = 0;
 }
 
-shared_ptr<keynode> keytree::addKey(string key, shared_ptr<keynode> parent)
+shared_ptr<keynode> keytree::addKey(const string key, shared_ptr<keynode> parent_ptr)
 {
-	int child_depth = parent->depth + 1;
-	keynode child = keynode(key, child_depth);
-	shared_ptr<keynode> child_ptr = make_shared<keynode>(child);
-	this->addChild(child_ptr, parent);
+	int child_depth = parent_ptr->depth + 1;
+	shared_ptr<keynode> child_ptr = make_shared<keynode>(keynode(key, child_depth));
+	parent_ptr->add(child_ptr);
 	return child_ptr;
-}
-
-void keytree::addChild(shared_ptr<keynode> child, shared_ptr<keynode> parent)
-{
-	parent->add(child);
-	if (child->depth > this->max_depth)
-		this->max_depth = child->depth;
 }
 
 vector<vector<string>> keytree::traverse() const
 {
 	vector<vector<string>> arr(this->root->n_leafs);
-	vector<string> seq(this->max_depth);
+	vector<string> seq(this->root->max_height);
 
 	unordered_map<string, shared_ptr<keynode>> children = this->root->children;
 	unordered_map<string, shared_ptr<keynode>>::const_iterator it_child = children.begin();

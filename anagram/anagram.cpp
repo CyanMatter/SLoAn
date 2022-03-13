@@ -22,8 +22,13 @@ bool fileExists(const string& name);
 string queryInput();
 string receiveInput(int max);
 string parseInput(string input);
-bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node_ptr, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug = false);
-
+void solve(keytree* const& tree, hashmap* const& map, const string input, const int min_solution_length = 2, const bool debug = false);
+bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* const& map, const string input, const int min_solution_length, const bool debug = false);
+void maskSequence(const string seq, const int mask, string* const& subseq_in, string* const& subseq_out);
+void eraseSolution(string key, unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap);
+bool contains(vector<shared_ptr<keynode>> map, string key);
+bool solve_intermediary_node_v1(const string& intermediary_key, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, hashmap* const& map, keytree* const& tree, const int min_solution_length, const bool debug);
+bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, hashmap* const& map, keytree* const& tree, const int min_solution_length, const bool debug);
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
@@ -80,7 +85,8 @@ int main(int argc, char* argv[])
 	keytree* const& tree = new keytree();
 	string sorted_input = parseInput(input);										// allow only permitted characters in input string
 	sort(sorted_input.begin(), sorted_input.end());									// sort input string in alphabetical order
-	solveAnagrams(tree, tree->root, &(map->getAnagramMap()), &(map->getSolutionMap()), sorted_input, debug);
+	solve(tree, map, sorted_input, 2, debug);
+	//! cut out tree. Because tree->root is equal to map->solutionMap[sorted_input]
 	vector<vector<string>> solution_arr = tree->traverse();
 
 	for (int i = 0; i < solution_arr.size(); i++) {
@@ -91,7 +97,7 @@ int main(int argc, char* argv[])
 			if (key == "")
 				break;
 
-			auto iterator = map->getAnagramMap().find(key);
+			auto iterator = map->getAnagramMap()->find(key);
 			vector<string> anagrams = iterator->second;
 			string line = "\t[";
 			for (string anagram : anagrams) {
@@ -212,66 +218,141 @@ string maskString(string& str, int mask[])
 	return sub_str;
 }
 
-bool solveAnagrams(keytree* const& tree, shared_ptr<keynode> node_ptr, unordered_map<string, vector<string>>* const& anagramMap, unordered_map<string, keynode>* const& solutionMap, string input, bool debug)
+void solve(keytree* const& tree, hashmap* const& map, const string input, const int min_solution_length, const bool debug)
 {
-	bool is_solution = false;
-	int n = 1 << input.length();											// n is the maximum iterations	
-	for (int mask = 1; mask < n; mask++) {									// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
-		
-		int d = mask;														// d is the dividend
-		int r = 0;															// r is the remainder
-		unsigned long long i = 0ull;										// i is the index of the current character of input
-		string subseq_in = "";												// subseq_in is the subsequence of input that is in the current mask
-		string subseq_out = "";												// subseq_out is the subsequence of input that is out the current mask
+	solve_rec(tree, tree->root, map, input, min_solution_length, debug);
+}
 
-		while (d > 0) {														// in this loop we read out every binary digit in the binary sequence of mask
-			r = d % 2;														// read out the digit and store in r
-			d >>= 1;														// shift to the next (which is the same as: divide by 2)
-			((r == 1) ? subseq_in : subseq_out) += input.at(i);				// store the char in either subseq_in or subseq_out according to the mask
-			i++;															// increment i and iterate
-		}
-
-
-		//!compare performance between using solutionMap always vs. only if subseq_in.size() > 2 
-		auto solution_it = solutionMap->find(subseq_in);					// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
-		if (solution_it != solutionMap->end()) {							// if the solution to the problem is known
-			if (solution_it->second.key == "") {							// and if the solution is that there are no anagrams for this sequence (this is stored as an empty string for a key)
-				continue;													// solve the next subsequence
+bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* const& map, const string seq, const int min_solution_length, const bool debug)
+{
+	unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap = map->getSolutionMap();
+	auto solution_it = solutionMap->find(seq);
+	if (solution_it != solutionMap->end()) {
+		if (solution_it->second.size() != 0) {
+			for (shared_ptr<keynode> child_ptr : solution_it->second) {
+				node_ptr->add(child_ptr);									// add a reference for each existing child node to the tree					
 			}
-			else {															// but if the solution does yield any anagrams,
-				is_solution = true;											// indicate that this subtree contains at least 1 solution
-				shared_ptr<keynode> child_ptr = make_shared<keynode>(solution_it->second);
-				tree->addChild(child_ptr, node_ptr);						// add a reference to the existing child node to the tree
+			return true;
+		}
+		else
+			return false;
+	}
+
+	bool is_solution = false;
+	unordered_map<string, vector<string>>* anagramMap = map->getAnagramMap();
+	int n = (1 << seq.length()) - 1;										// n is the maximum iterations
+	for (int mask = n; mask > 0; mask--) {									// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
+		string subseq_in = "", subseq_out = "";								// subseq_in is the subsequence of input that is within the mask, while -out is outside of the mask
+		maskSequence(seq, mask, &subseq_in, &subseq_out);					// mask the input and collect the subsequence in the belonging string subseq_in or -out
+																			// i is the index of input where we stopped masking, because subseq_in is complete
+		if (node_ptr->children.find(subseq_in) != node_ptr->children.end()) {	// if the masked sequence is already known by the node (this happens with duplicate letters in input)
+			continue;															// solve the next sequence
+		}
+		
+		if (subseq_in.size() >= min_solution_length) {
+			//!compare performance between using solutionMap always vs. only if subseq_in.size() >= 1
+			auto solution_it = solutionMap->find(subseq_in);				// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
+			if (solution_it != solutionMap->end()) {						// if the solution to the problem is known
+				if (solution_it->second.size() != 0) {						// and if the solution yields any anagrams for this sequence ("no anagram" solution is stored as empty vector)
+					if (subseq_out.size() > 0) {							// and if this isn't the complete solution to the sequence
+						//TODO check if subseq_out in solutionMap
+						if (!contains(solution_it->second, subseq_in)) {
+							for (shared_ptr<keynode> child : solution_it->second) {
+								//TODO check if subseq_out among child descendants
+								is_solution |= solve_intermediary_node_v2(child, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
+							}
+						}
+						else {
+							is_solution |= solve_intermediary_node_v1(subseq_in, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
+						}
+					}
+					else {
+						for (shared_ptr<keynode> child_ptr : solution_it->second) {
+							node_ptr->add(child_ptr);						// add a reference for each existing child node to the tree
+						}
+						is_solution = true;									// indicate that this subtree contains at least 1 solution
+					}
+				}
 				continue;													// solve the next subsequence
 			}
 		}
 
 		auto anagram_it = anagramMap->find(subseq_in);						// get all anagrams of subseq_in
 		if (anagram_it != anagramMap->end()) {								// if there is any anagram at all, then we'll go a recursion deeper
-			keynode child = keynode(subseq_in, (*node_ptr).depth + 1);		// create a child node containing the key for the known anagram
-			shared_ptr<keynode> child_ptr = make_shared<keynode>(child);	// make a shared pointer, which has possession over the object it points to
-			subseq_out += input.substr(i);									// if any, append remaining characters of input to subseq_out
+			shared_ptr<keynode> child_ptr = map->addSolution(seq, subseq_in, (*node_ptr).depth + 1);	// add this solution to the subsequence to the map of known solutions
 			if (subseq_out.size() == 0) {									// if all letters in the input have been used in the sequence
-				tree->addChild(child_ptr, node_ptr);						// add the new child node to this node
-				(*solutionMap)[subseq_in] = child;							// add a node of this solution to the map of known solutions
-				return true;												// indicate to caller that a solution has been found
+				node_ptr->add(child_ptr);									// add the new child node to this node
+				is_solution = true;											// indicate to caller that a solution has been found
 			}
-			else if (solveAnagrams(tree, child_ptr, anagramMap, solutionMap, subseq_out, debug)) {	// if all parts in the sequence form a solution
+			else if (solve_rec(tree, child_ptr, map, subseq_out, min_solution_length, debug)) {	// if all parts in the sequence form a solution
+				node_ptr->add(child_ptr);									// then add all those parts to this node
 				is_solution = true;											// indicate that this subtree contains at least 1 solution
-				tree->addChild(child_ptr, node_ptr);						// then add all those parts to this node
-				(*solutionMap)[subseq_in] = child;							// add the root of the subtree of solutions to the map of known solutions
 			}																// continue looking for other solutions
 			else {
-				(*solutionMap)[subseq_in] = keynode();						// add the "no anagram" solution to the map for this key
+				eraseSolution(seq, solutionMap);							// remove the last added solution to input: the node referenced by child_ptr
+				map->addEmptySolution(subseq_in, min_solution_length);		// add "no anagram" solution for this key
 			}
 		}
-		else {																// if there is ultimately no anagrams found for input
-			(*solutionMap)[subseq_in] = keynode();							// add the "no anagram" solution to the map for this key
+		else {																// if there is ultimately no anagram found for this key
+			map->addEmptySolution(subseq_in, min_solution_length);			// add the "no anagram" solution for this key
 		}
 	}
-
-	if (!is_solution) {														// if there is ultimately no anagrams found for input
-		(*solutionMap)[input] = keynode();									// add the "no anagram" solution to the map for this key
-	}
 	return is_solution;														// tell caller whether this subsequence contains any solutions
+}
+
+void maskSequence(const string seq, int mask, string* const& subseq_in, string* const& subseq_out) {
+	int r = 0;																// r is the remainder
+	unsigned long long i = 0ull;											// i is the index of the current character of input
+																			// mask stands in for the dividend
+	while (mask > 0) {														// in this loop we read out every binary digit in the binary sequence of mask
+		r = mask % 2;														// read out the digit and store in r
+		mask >>= 1;															// shift to the next (which is the same as: divide by 2)
+		((r == 1) ? *subseq_in : *subseq_out) += seq.at(i);					// store the char in either subseq_in or subseq_out according to the mask
+		i++;																// increment i and iterate
+	}
+	*subseq_out += seq.substr(i);											// if any, append remaining characters of input to subseq_out
+}
+
+void eraseSolution(string key, unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap)
+{
+	auto nodes = solutionMap->find(key);
+	if (nodes != solutionMap->end()) {
+		nodes->second.pop_back();											// remove the last added solution to input: the node referenced by child_ptr
+		if (nodes->second.size() == 0) {
+			solutionMap->erase(nodes);
+		}
+	}
+}
+
+bool contains(vector<shared_ptr<keynode>> nodes, string key)
+{
+	for (shared_ptr<keynode> node_ptr : nodes) {
+		if (node_ptr->key == key)
+			return true;
+	}
+	return false;
+}
+
+bool solve_intermediary_node_v1(const string& intermediary_key, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, hashmap* const& map, keytree* const& tree, const int min_solution_length, const bool debug) {
+	shared_ptr<keynode> temp_node = make_shared<keynode>(keynode(intermediary_key, parent->depth + 1));
+	if (solve_rec(tree, temp_node, map, subseq_out, min_solution_length, debug)) {
+		parent->add(temp_node);
+		map->addSolution(seq, temp_node);
+		return true;
+	}
+	return false;
+}
+
+bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, hashmap* const& map, keytree* const& tree, const int min_solution_length, const bool debug) {
+	shared_ptr<keynode> temp_node = make_shared<keynode>(keynode("", parent->depth));
+	if (solve_rec(tree, temp_node, map, subseq_out, min_solution_length, debug)) {
+		for (auto it = temp_node->children.begin(); it != temp_node->children.end(); it++) {
+			shared_ptr<keynode> child = it->second;
+			child->addToAllLeaves(intermediary_node_ptr);
+			parent->add(child);
+			map->addSolution(seq, child->key, child->depth);
+		}
+		return true;
+	}
+	return false;
 }
