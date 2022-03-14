@@ -32,6 +32,16 @@ bool keynode::isLeaf()
 	return this->max_height == 0;
 }
 
+bool keynode::keyInDescendants(string key)
+{
+	for (auto it = this->children.begin(); it != this->children.end(); it++) {
+		if (it->second->keyInDescendants(key))
+			return true;
+	}
+	return false;
+}
+
+
 void keynode::add(shared_ptr<keynode> node)
 {
 	int n_leafs = node->n_leafs;

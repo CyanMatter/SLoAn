@@ -21,6 +21,7 @@ public:
 	bool operator==(const keynode& rhs) const noexcept;
 
 	bool isLeaf();
+	bool keyInDescendants(string key);
 
 	void add(shared_ptr<keynode> node);
 	void addToAllLeaves(shared_ptr<keynode> node);

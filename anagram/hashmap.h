@@ -50,6 +50,7 @@ public:
 	shared_ptr<keynode> addSolution(const string solution_key, const string node_key, const int node_depth);
 	void addSolution(const string solution_key, shared_ptr<keynode> node_ptr);
 	void addEmptySolution(const string key, const int min_solution_length);
+	bool eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq);
 
 	hashmap();
 	

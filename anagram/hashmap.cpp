@@ -112,6 +112,19 @@ void hashmap::addEmptySolution(const string key, const int min_solution_length)
 		this->solutionMap[key] = vector<shared_ptr<keynode>>();
 }
 
+bool hashmap::eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq)
+{
+	unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator seq_it = this->solutionMap.find(seq);
+	if (seq_it != this->solutionMap.end()) {
+		for (shared_ptr<keynode> child : seq_it->second) {
+			if (child->key == key_x || child->key == key_y) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 void hashmap::write(string& filename)
 {
 	try {

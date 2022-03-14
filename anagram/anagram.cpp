@@ -251,14 +251,28 @@ bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* cons
 		
 		if (subseq_in.size() >= min_solution_length) {
 			//!compare performance between using solutionMap always vs. only if subseq_in.size() >= 1
-			auto solution_it = solutionMap->find(subseq_in);				// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
-			if (solution_it != solutionMap->end()) {						// if the solution to the problem is known
-				if (solution_it->second.size() != 0) {						// and if the solution yields any anagrams for this sequence ("no anagram" solution is stored as empty vector)
+			auto it_in = solutionMap->find(subseq_in);				// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
+			if (it_in != solutionMap->end()) {						// if the solution to the problem is known
+				if (it_in->second.size() != 0) {						// and if the solution yields any anagrams for this sequence ("no anagram" solution is stored as empty vector)
 					if (subseq_out.size() > 0) {							// and if this isn't the complete solution to the sequence
+						
 						//TODO check if subseq_out in solutionMap
-						if (!contains(solution_it->second, subseq_in)) {
-							for (shared_ptr<keynode> child : solution_it->second) {
+						auto it_out = solutionMap->find(subseq_out);
+						if (it_out != solutionMap->end() && !map->eitherKeyIsInSolution(subseq_in, subseq_out, seq)) {
+							// we found a new solution for seq by combining the already known solutions for subseq_in and -out
+							for (shared_ptr<keynode> child : it_out->second) {
+								int a = 0;
+							}
+						}
+
+						if (!contains(it_in->second, subseq_in)) {
+							for (shared_ptr<keynode> child : it_in->second) {
+								
 								//TODO check if subseq_out among child descendants
+								if (child->keyInDescendants(subseq_out)) {
+									int a = 0;
+								}
+
 								is_solution |= solve_intermediary_node_v2(child, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
 							}
 						}
@@ -267,7 +281,7 @@ bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* cons
 						}
 					}
 					else {
-						for (shared_ptr<keynode> child_ptr : solution_it->second) {
+						for (shared_ptr<keynode> child_ptr : it_in->second) {
 							node_ptr->add(child_ptr);						// add a reference for each existing child node to the tree
 						}
 						is_solution = true;									// indicate that this subtree contains at least 1 solution
