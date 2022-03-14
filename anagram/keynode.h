@@ -21,9 +21,11 @@ public:
 	bool operator==(const keynode& rhs) const noexcept;
 
 	bool isLeaf();
-	bool keyInDescendants(string key);
-
+	
 	void add(shared_ptr<keynode> node);
-	void addToAllLeaves(shared_ptr<keynode> node);
+	void addToAllLeaves(shared_ptr<keynode> child);
 	int traversePerNode(vector<vector<string>>* const& arr_ptr, vector<string> key_seq, int i, int j=0) const;
+
+	static bool keyInDescendants(string key, shared_ptr<keynode> node);
+	static bool isSubsequence(string& x, string& y);
 };

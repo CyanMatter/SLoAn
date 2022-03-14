@@ -29,3 +29,29 @@ vector<vector<string>> keytree::traverse() const
 	}
 	return arr;
 }
+
+pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> keytree::bestParents(vector<shared_ptr<keynode>> nodes_x, vector<shared_ptr<keynode>> nodes_y)
+{
+	int sum_leafs = 0, sum_max_height = 0;
+	for (shared_ptr<keynode> child : nodes_x) {
+		sum_leafs += child->n_leafs;
+		sum_max_height += child->max_height;
+	}
+	for (shared_ptr<keynode> child : nodes_y) {
+		sum_leafs -= child->n_leafs;
+		sum_max_height -= child->max_height;
+	}
+
+	if (sum_leafs < 0) {	// sum of leaves in nodes_x is less than that in nodes_y
+		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_x, nodes_y);
+	}
+	else if (sum_leafs > 0) { // sum of leaves in nodes_x is greater than that in nodes_y
+		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_y, nodes_x);
+	}// sum of leaves in nodes_x is equal to that in nodes_y
+	else if (sum_max_height <= 0) { // and sum of max_height in nodes_ x is less than or equal to that in nodes_y
+		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_x, nodes_y);
+	}
+	else {	// sum of max_height in nodes_ x is greater than that in nodes_y
+		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_y, nodes_x);
+	}
+}

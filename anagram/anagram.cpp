@@ -27,8 +27,10 @@ bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* cons
 void maskSequence(const string seq, const int mask, string* const& subseq_in, string* const& subseq_out);
 void eraseSolution(string key, unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap);
 bool contains(vector<shared_ptr<keynode>> map, string key);
+bool checkSolutions(unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it, shared_ptr<keynode> node_ptr);
 bool solve_intermediary_node_v1(const string& intermediary_key, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, hashmap* const& map, keytree* const& tree, const int min_solution_length, const bool debug);
 bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, hashmap* const& map, keytree* const& tree, const int min_solution_length, const bool debug);
+
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
@@ -150,7 +152,7 @@ string receiveInput(int max)
 {
 	if (max > 64)
 		EXIT_FAILURE;									// input array cannot be initialized with a larger size than 64 elements
-	
+
 	char input[66];
 	cin.get(input, 66);
 	if (strlen(input) > max) {
@@ -226,16 +228,9 @@ void solve(keytree* const& tree, hashmap* const& map, const string input, const 
 bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* const& map, const string seq, const int min_solution_length, const bool debug)
 {
 	unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap = map->getSolutionMap();
-	auto solution_it = solutionMap->find(seq);
-	if (solution_it != solutionMap->end()) {
-		if (solution_it->second.size() != 0) {
-			for (shared_ptr<keynode> child_ptr : solution_it->second) {
-				node_ptr->add(child_ptr);									// add a reference for each existing child node to the tree					
-			}
-			return true;
-		}
-		else
-			return false;
+	auto it_seq = solutionMap->find(seq);
+	if (it_seq != solutionMap->end()) {								// found an pre-existing solution
+		return checkSolutions(it_seq, node_ptr);						// check if a solution exists for "seq." If so, add the node for that solution to "node_ptr" and return true
 	}
 
 	bool is_solution = false;
@@ -245,31 +240,36 @@ bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, hashmap* cons
 		string subseq_in = "", subseq_out = "";								// subseq_in is the subsequence of input that is within the mask, while -out is outside of the mask
 		maskSequence(seq, mask, &subseq_in, &subseq_out);					// mask the input and collect the subsequence in the belonging string subseq_in or -out
 																			// i is the index of input where we stopped masking, because subseq_in is complete
-		if (node_ptr->children.find(subseq_in) != node_ptr->children.end()) {	// if the masked sequence is already known by the node (this happens with duplicate letters in input)
+		if (node_ptr->children.find(subseq_in) != node_ptr->children.end()) {	// if the "subseq_in" is already known by the node (this happens with duplicate letters in input)
 			continue;															// solve the next sequence
 		}
-		
+
 		if (subseq_in.size() >= min_solution_length) {
 			//!compare performance between using solutionMap always vs. only if subseq_in.size() >= 1
 			auto it_in = solutionMap->find(subseq_in);				// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
 			if (it_in != solutionMap->end()) {						// if the solution to the problem is known
 				if (it_in->second.size() != 0) {						// and if the solution yields any anagrams for this sequence ("no anagram" solution is stored as empty vector)
 					if (subseq_out.size() > 0) {							// and if this isn't the complete solution to the sequence
-						
+
 						//TODO check if subseq_out in solutionMap
 						auto it_out = solutionMap->find(subseq_out);
 						if (it_out != solutionMap->end() && !map->eitherKeyIsInSolution(subseq_in, subseq_out, seq)) {
 							// we found a new solution for seq by combining the already known solutions for subseq_in and -out
-							for (shared_ptr<keynode> child : it_out->second) {
-								int a = 0;
-							}
+
+							// create a new node vector "parents" by duplicating either it_in->second or it_out->second and (including its children).
+							// whether of the two has the lowest sum of n_leafs, or lowest sum of height as a tie breaker.
+							auto [parents, children] = keytree::bestParents(it_in->second, it_out->second);
+							// recalculate max_height for "parents" (but depth doesn't need to be recalculated for "children," there is another location for that points toward these nodes and depth wouldn't be correct there. it doesn't matter) 
+
+							// add the non-copied children as children to the leaves of "parents".
+							// add "parents" to the solutionMap at key "seq"
 						}
 
-						if (!contains(it_in->second, subseq_in)) {
+						else if (!contains(it_in->second, subseq_in)) {
 							for (shared_ptr<keynode> child : it_in->second) {
-								
+
 								//TODO check if subseq_out among child descendants
-								if (child->keyInDescendants(subseq_out)) {
+								if (keynode::keyInDescendants(subseq_out, child)) {
 									int a = 0;
 								}
 
@@ -369,4 +369,16 @@ bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, share
 		return true;
 	}
 	return false;
+}
+
+bool checkSolutions(unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it, shared_ptr<keynode> node_ptr)
+{
+	if (it->second.size() != 0) {								// if the solution is that there are any anagrams
+		for (shared_ptr<keynode> child_ptr : it->second) {
+			node_ptr->add(child_ptr);									// add a reference for each existing child node to the tree					
+		}
+		return true;
+	}
+	else
+		return false;
 }
