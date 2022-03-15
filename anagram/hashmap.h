@@ -9,7 +9,9 @@
 #include <sstream>
 #include <assert.h>
 #include <stddef.h>
+#include <algorithm>
 #include "keynode.h"
+
 
 typedef ptrdiff_t Size;
 
