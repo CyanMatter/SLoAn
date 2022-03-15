@@ -4,7 +4,10 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include <time.h>
+#include <cstring>
+#include <sys/stat.h>
 
 #include "hashmap.h"
 #include "keytree.h"
@@ -34,12 +37,12 @@ bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, share
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
-	string path_to_wordlist = "db\\2of12inf.txt";
+	string path_to_wordlist = "db/2of12inf.txt";
 	hashmap* const& map = new hashmap();
 
 	bool lookingForFile = true;
 	while (lookingForFile) {
-		string absolute_path_to_wordlist = fs::current_path().string() + "\\" + path_to_wordlist;
+		string absolute_path_to_wordlist = fs::current_path().string() + "/" + path_to_wordlist;
 		if (!fileExists(absolute_path_to_wordlist))
 		{
 			cout << "Cannot open " + absolute_path_to_wordlist << endl;
@@ -211,7 +214,7 @@ string parseInput(string input)
 
 string maskString(string& str, int mask[])
 {
-	int size = sizeof(mask) / sizeof(mask[0]);
+	size_t size = sizeof(mask) / sizeof(mask[0]);
 	string sub_str;
 	for (int i = 0; i < size; i++) {
 		if (mask[i] == 1)
