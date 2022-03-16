@@ -181,7 +181,7 @@ string parseInput(string input)
 
 string maskString(string& str, int mask[])
 {
-	size_t size = sizeof(mask) / sizeof(mask[0]);
+	size_t size = sizeof(*mask) / sizeof(mask[0]);
 	string sub_str;
 	for (int i = 0; i < size; i++) {
 		if (mask[i] == 1)
