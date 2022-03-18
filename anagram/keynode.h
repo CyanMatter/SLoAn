@@ -3,8 +3,10 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <vector>
 
-using namespace std;
+using std::string; using std::unordered_map;
+using std::shared_ptr; using std::vector;
 
 class keynode
 {

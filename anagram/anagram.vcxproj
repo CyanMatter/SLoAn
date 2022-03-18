@@ -19,23 +19,30 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="anagram.cpp" />
-    <ClCompile Include="hashmap.cpp" />
+    <ClCompile Include="data.cpp" />
     <ClCompile Include="keynode.cpp" />
     <ClCompile Include="keytree.cpp" />
+    <ClCompile Include="SLoAn.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hashmap.h" />
+    <ClInclude Include="data.h" />
     <ClInclude Include="keynode.h" />
     <ClInclude Include="keytree.h" />
+    <ClInclude Include="SLoAn.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="db\2of12inf.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="db\maps\2of12inf.dat" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{ec5d7aca-e5cd-4c72-ad67-70590bac4aa8}</ProjectGuid>
-    <RootNamespace>anagram2</RootNamespace>
+    <RootNamespace>SLoAn</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>anagram</ProjectName>
+    <ProjectName>SLoAn</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -55,7 +55,7 @@ void keynode::add(shared_ptr<keynode> child)
 			int a = 0; //break here
 		}
 	}
-	
+
 	if (!keyInDescendants(this->key, child)) {
 		this->children[key] = child;
 	}
@@ -93,7 +93,7 @@ int keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<stri
 		}
 		return i_arr;
 	}
-	return i_arr+1;
+	return i_arr + 1;
 }
 
 bool keynode::keyInDescendants(string key, shared_ptr<keynode> node)

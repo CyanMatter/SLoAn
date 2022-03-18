@@ -13,30 +13,49 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="db">
+      <UniqueIdentifier>{e838c87a-2583-4e59-bdd3-9c41f6157dec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="db\maps">
+      <UniqueIdentifier>{1da1e6ab-6dd9-4fb9-b40c-1bf5a0c0bbc7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="anagram.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="hashmap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="keynode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="keytree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SLoAn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="data.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="hashmap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="keynode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="keytree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SLoAn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="db\2of12inf.txt">
+      <Filter>db</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="db\maps\2of12inf.dat">
+      <Filter>db\maps</Filter>
+    </None>
   </ItemGroup>
 </Project>
