@@ -7,11 +7,11 @@
   <p align="center">
     It's a <b>S</b>olver of <b>Lo</b>ng <b>An</b>agrams
     <br />
-    <a href="#getting-started"><strong>How to install �</strong></a>
+    <a href="#getting-started"><strong>How to install »</strong></a>
     <br />
     <br />
     <a href="https://github.com/CyanMatter/SLoAn/issues">Report bug</a>
-    �
+    ·
     <a href="https://github.com/CyanMatter/SLoAn/issues">Request feature</a>
   </p>
 </div>
