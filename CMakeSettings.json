@@ -9,9 +9,7 @@
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs": "",
-      "cmakeToolchain": "C:/Program Files (x86)/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "variables": []
+      "ctestCommandArgs": ""
     },
     {
       "name": "x64-Release",
@@ -22,9 +20,7 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "cmakeToolchain": "C:/Program Files (x86)/vcpkg/scripts/buildsystems/vcpkg.cmake",
-      "inheritEnvironments": [ "msvc_x64_x64" ],
-      "variables": []
+      "inheritEnvironments": [ "msvc_x64_x64" ]
     }
   ]
 }
