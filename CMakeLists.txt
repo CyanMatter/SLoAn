@@ -30,7 +30,7 @@ set(CMAKE_CONFIGURATION_TYPES
 # Global compiler options
 if(MSVC)
     # remove default flags provided with CMake for MSVC
-    set(CMAKE_CXX_FLAGS "")
+    set(CMAKE_CXX_FLAGS "/EHsc")
     set(CMAKE_CXX_FLAGS_RELEASE "")
 endif()
 
