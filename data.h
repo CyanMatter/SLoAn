@@ -59,6 +59,7 @@ public:
 	shared_ptr<keynode> addSolution(const string solution_key, const string node_key, const int node_depth);
 	void addSolution(const string solution_key, shared_ptr<keynode> node_ptr);
 	void addEmptySolution(const string key, const int min_solution_length);
+	unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator findSolution(const string& key);
 	bool eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq);
 
 	data();
@@ -68,5 +69,7 @@ public:
 	static void build(data* const& map, bool debug = false);
 	static bool storedIsValid(data* const& map, bool debug = false);
 	static time_t read_file_last_modified_for_map(data* const& map, ifstream& file);
+	static int sumLeafs(vector<shared_ptr<keynode>> nodes);
+	static int maxHeight(vector<shared_ptr<keynode>> nodes);
 	static time_t string_as_time_t(string& str);
 };

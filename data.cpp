@@ -107,6 +107,11 @@ void data::addEmptySolution(const string key, const int min_solution_length)
 		this->solutionMap[key] = vector<shared_ptr<keynode>>();
 }
 
+unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator data::findSolution(const string& key)
+{
+	return this->solutionMap.find(key);
+}
+
 bool data::eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq)
 {
 	unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator seq_it = this->solutionMap.find(seq);
@@ -354,5 +359,23 @@ time_t data::read_file_last_modified_for_map(data* const& map, ifstream& file)
 	}
 	else
 		throw new invalid_argument("Unable to read the first line of input file");
+}
+
+int data::sumLeafs(vector<shared_ptr<keynode>> nodes)
+{
+	int sum = 0;
+	for (shared_ptr<keynode> node : nodes) {
+		sum += node->n_leafs;
+	}
+	return sum;
+}
+
+int data::maxHeight(vector<shared_ptr<keynode>> nodes) {
+	int max_height = 0;
+	for (shared_ptr<keynode> node : nodes) {
+		if (node->max_height > max_height)
+			max_height = node->max_height;
+	}
+	return max_height;
 }
 ;

@@ -75,7 +75,7 @@ endmacro(configure_files)
 configure_files(${CMAKE_CURRENT_SOURCE_DIR}/db ${CMAKE_CURRENT_BINARY_DIR}/db)
 
 # Add source to this project's executable.
-add_executable (SLoAn "SLoAn.cpp" "SLoAn.h" "data.h" "data.cpp" "keytree.h" "keytree.cpp" "keynode.h" "keynode.cpp")
+add_executable (SLoAn "SLoAn.cpp" "SLoAn.h" "data.h" "data.cpp" "keynode.h" "keynode.cpp")
 
 # Import boost
 set(Boost_USE_STATIC_LIBS OFF)

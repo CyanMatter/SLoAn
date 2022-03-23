@@ -5,7 +5,7 @@ keynode::keynode()
 	this->key = "";
 	this->children = {};
 	this->depth = 0;
-	this->max_height = 0;
+	this->max_height = 1;
 	this->n_leafs = 1;
 }
 
@@ -14,7 +14,7 @@ keynode::keynode(const string key, const int depth)
 	this->key = key;
 	this->children = {};
 	this->depth = depth;
-	this->max_height = 0;
+	this->max_height = 1;
 	this->n_leafs = 1;
 }
 
@@ -87,9 +87,9 @@ int keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<stri
 	}
 	else {
 		for (auto it = children.begin(); it != children.end(); it++) {
-			keynode child = (*it->second);
+			shared_ptr<keynode> child = it->second;
 			vector<string> key_seq_copy = seq;
-			i_arr = child.traversePerNode(arr_ptr, key_seq_copy, i_arr, i_seq + 1);
+			i_arr = child->traversePerNode(arr_ptr, key_seq_copy, i_arr, i_seq + 1);
 		}
 		return i_arr;
 	}
