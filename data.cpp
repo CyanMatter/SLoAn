@@ -112,6 +112,11 @@ unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator data::findSol
 	return this->solutionMap.find(key);
 }
 
+unordered_map<string, vector<string>>::const_iterator data::findAnagram(const string& key)
+{
+	return this->anagramMap.find(key);
+}
+
 bool data::eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq)
 {
 	unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator seq_it = this->solutionMap.find(seq);

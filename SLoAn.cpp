@@ -60,25 +60,7 @@ int main(int argc, char* argv[])
 	
 	if (solution_it != map->getSolutionMap()->end()) {
 		vector<vector<string>> solution_arr = traverse(solution_it->second);
-
-		for (int i = 0; i < solution_arr.size(); i++) {
-			cout << "Solution " << i << ":" << endl;
-			vector<string> solution = solution_arr[i];
-
-			for (string key : solution) {
-				if (key == "")
-					break;
-
-				auto iterator = map->getAnagramMap()->find(key);
-				vector<string> anagrams = iterator->second;
-				string line = "\t[";
-				for (string anagram : anagrams) {
-					line += anagram + ", ";
-				}
-				line = line.substr(0, line.size() - 2) + "]";
-				cout << line << endl;
-			}
-		}
+		logSolutions(map, solution_arr);
 	}
 
 	return 0;
@@ -411,4 +393,26 @@ vector<vector<string>> traverse(vector<shared_ptr<keynode>> solutions_root)
 	}
 
 	return arr;
+}
+
+void logSolutions(data* const& map, vector<vector<string>> solution_arr)
+{
+	for (int i = 0; i < solution_arr.size(); i++) {
+		cout << "Solution " << i << ":" << endl;
+		vector<string> solution = solution_arr[i];
+
+		for (string key : solution) {
+			if (key == "")
+				break;
+
+			auto iterator = map->findAnagram(key);
+			vector<string> anagrams = iterator->second;
+			string line = "\t[";
+			for (string anagram : anagrams) {
+				line += anagram + ", ";
+			}
+			line = line.substr(0, line.size() - 2) + "]";
+			cout << line << endl;
+		}
+	}
 }

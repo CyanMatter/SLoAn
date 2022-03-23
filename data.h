@@ -60,6 +60,7 @@ public:
 	void addSolution(const string solution_key, shared_ptr<keynode> node_ptr);
 	void addEmptySolution(const string key, const int min_solution_length);
 	unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator findSolution(const string& key);
+	unordered_map<string, vector<string>>::const_iterator findAnagram(const string& key);
 	bool eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq);
 
 	data();

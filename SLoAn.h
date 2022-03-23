@@ -37,3 +37,4 @@ bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, share
 bool solveRemainingLetters(data* const& map, shared_ptr<keynode> node_ptr, const string& seq, const string& subseq_out, const string& subseq_in, unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it_in, const int min_solution_length, const bool debug);
 pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> bestParents(vector<shared_ptr<keynode>> nodes_x, vector<shared_ptr<keynode>> nodes_y);
 vector<vector<string>> traverse(vector<shared_ptr<keynode>> solutions_root);
+void logSolutions(data* const& map, vector<vector<string>> solution_arr);
