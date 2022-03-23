@@ -211,53 +211,15 @@ bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, data* const& 
 		maskSequence(seq, mask, &subseq_in, &subseq_out);					// mask the input and collect the subsequence in the belonging string subseq_in or -out
 																			// i is the index of input where we stopped masking, because subseq_in is complete
 		if (node_ptr->children.find(subseq_in) != node_ptr->children.end()) {	// if the "subseq_in" is already known by the node (this happens with duplicate letters in input)
-			continue;															// solve the next sequence
+			continue;														// solve the next sequence
 		}
 
 		if (subseq_in.size() >= min_solution_length) {
 			//!compare performance between using solutionMap always vs. only if subseq_in.size() >= 1
-			auto it_in = solutionMap->find(subseq_in);				// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
-			if (it_in != solutionMap->end()) {						// if the solution to the problem is known
-				if (it_in->second.size() != 0) {						// and if the solution yields any anagrams for this sequence ("no anagram" solution is stored as empty vector)
-					if (subseq_out.size() > 0) {							// and if this isn't the complete solution to the sequence
-
-						//TODO check if subseq_out in solutionMap
-						auto it_out = solutionMap->find(subseq_out);
-						if (it_out != solutionMap->end() && !map->eitherKeyIsInSolution(subseq_in, subseq_out, seq)) {
-							// we found a new solution for seq by combining the already known solutions for subseq_in and -out
-
-							// create a new node vector "parents" by duplicating either it_in->second or it_out->second and (including its children).
-							// whether of the two has the lowest sum of n_leafs, or lowest sum of height as a tie breaker.
-							pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> pair = keytree::bestParents(it_in->second, it_out->second);
-							vector<shared_ptr<keynode>> parents = pair.first;
-							vector<shared_ptr<keynode>> children = pair.second;
-							// recalculate max_height for "parents" (but depth doesn't need to be recalculated for "children," there is another location for that points toward these nodes and depth wouldn't be correct there. it doesn't matter) 
-
-							// add the non-copied children as children to the leaves of "parents".
-							// add "parents" to the solutionMap at key "seq"
-						}
-
-						else if (!contains(it_in->second, subseq_in)) {
-							for (shared_ptr<keynode> child : it_in->second) {
-
-								//TODO check if subseq_out among child descendants
-								if (keynode::keyInDescendants(subseq_out, child)) {
-									int a = 0;
-								}
-
-								is_solution |= solve_intermediary_node_v2(child, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
-							}
-						}
-						else {
-							is_solution |= solve_intermediary_node_v1(subseq_in, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
-						}
-					}
-					else {
-						for (shared_ptr<keynode> child_ptr : it_in->second) {
-							node_ptr->add(child_ptr);						// add a reference for each existing child node to the tree
-						}
-						is_solution = true;									// indicate that this subtree contains at least 1 solution
-					}
+			auto it_in = solutionMap->find(subseq_in);						// check if the same problem has already been solved. if so, then the answer is stored in solutionMap
+			if (it_in != solutionMap->end()) {								// if the solution to the problem is known
+				if (it_in->second.size() != 0) {							// and if the solution yields any anagrams for this sequence ("no anagram" solution is stored as empty vector)
+					is_solution |= solveRemainingLetters(map, tree, node_ptr, seq, subseq_out, subseq_in, it_in, min_solution_length, debug);
 				}
 				continue;													// solve the next subsequence
 			}
@@ -283,6 +245,7 @@ bool solve_rec(keytree* const& tree, shared_ptr<keynode> node_ptr, data* const& 
 			map->addEmptySolution(subseq_in, min_solution_length);			// add the "no anagram" solution for this key
 		}
 	}
+
 	return is_solution;														// tell caller whether this subsequence contains any solutions
 }
 
@@ -353,4 +316,51 @@ bool checkSolutions(unordered_map<string, vector<shared_ptr<keynode>>>::const_it
 	}
 	else
 		return false;
+}
+
+bool solveRemainingLetters(data* const& map, keytree* const& tree, shared_ptr<keynode> node_ptr, const string& seq, const string& subseq_out, const string& subseq_in, unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it_in, const int min_solution_length, const bool debug)
+{
+	if (subseq_out.size() > 0) {							// and if this isn't the complete solution to the sequence
+
+						//TODO check if subseq_out in solutionMap
+		unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap = map->getSolutionMap();
+		unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it_out = solutionMap->find(subseq_out);
+		if (it_out != solutionMap->end() && !map->eitherKeyIsInSolution(subseq_in, subseq_out, seq)) {
+			// we found a new solution for seq by combining the already known solutions for subseq_in and -out
+
+			// create a new node vector "parents" by duplicating either it_in->second or it_out->second and (including its children).
+			// whether of the two has the lowest sum of n_leafs, or lowest sum of height as a tie breaker.
+			pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> pair = keytree::bestParents(it_in->second, it_out->second);
+			vector<shared_ptr<keynode>> parents = pair.first;
+			vector<shared_ptr<keynode>> children = pair.second;
+			// recalculate max_height for "parents" (but depth doesn't need to be recalculated for "children," there is another location for that points toward these nodes and depth wouldn't be correct there. it doesn't matter) 
+
+			// add the non-copied children as children to the leaves of "parents".
+			// add "parents" to the solutionMap at key "seq"
+			
+			//!WIP temporary
+			return false;
+		}
+
+		else if (!contains(it_in->second, subseq_in)) {
+			for (shared_ptr<keynode> child : it_in->second) {
+
+				//TODO check if subseq_out among child descendants
+				if (keynode::keyInDescendants(subseq_out, child)) {
+					int a = 0;
+				}
+
+				return solve_intermediary_node_v2(child, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
+			}
+		}
+		else {
+			return solve_intermediary_node_v1(subseq_in, node_ptr, seq, subseq_out, map, tree, min_solution_length, debug);
+		}
+	}
+	else {
+		for (shared_ptr<keynode> child_ptr : it_in->second) {
+			node_ptr->add(child_ptr);						// add a reference for each existing child node to the tree
+		}
+		return true;									// indicate that this subtree contains at least 1 solution
+	}
 }
