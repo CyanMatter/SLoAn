@@ -3,7 +3,7 @@
 int main(int argc, char* argv[])
 {
 	const bool debug = true;
-	path path_to_wordlist = "db";		// hardcoded, for now
+	path path_to_wordlist{ "db" };		// hardcoded, for now
 	path_to_wordlist /= "2of12inf.txt";
 	data* const& map = new data();
 
@@ -29,10 +29,10 @@ int main(int argc, char* argv[])
 				cout << "Retry? (y/n): ";
 				cin >> input;
 				cout << endl;
-				if (tolower(input[0]) == 'y') {
+				if (std::tolower(input[0]) == 'y') {
 					query = false;
 				}
-				else if (tolower(input[0]) == 'n') {
+				else if (std::tolower(input[0]) == 'n') {
 					cout << "Program closed" << endl;
 					EXIT_SUCCESS;
 				}
@@ -348,30 +348,24 @@ bool solveRemainingLetters(data* const& map, shared_ptr<keynode> node_ptr, const
 		}
 		return true;									// indicate that this subtree contains at least 1 solution
 	}
+	return false;
 }
 
 pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> bestParents(vector<shared_ptr<keynode>> nodes_x, vector<shared_ptr<keynode>> nodes_y)
 {
-	int sum_leafs = 0, sum_max_height = 0;
-	for (shared_ptr<keynode> child : nodes_x) {
-		sum_leafs += child->n_leafs;
-		sum_max_height += child->max_height;
-	}
-	for (shared_ptr<keynode> child : nodes_y) {
-		sum_leafs -= child->n_leafs;
-		sum_max_height -= child->max_height;
-	}
+	const int diff_sum_leafs = data::sumLeafs(nodes_x) - data::sumLeafs(nodes_y);
+	const int diff_max_height = data::maxHeight(nodes_x) - data::maxHeight(nodes_y);
 
-	if (sum_leafs < 0) {	// sum of leaves in nodes_x is less than that in nodes_y
+	if (diff_sum_leafs < 0) {									// sum of leaves in nodes_x is less than that in nodes_y
 		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_x, nodes_y);
 	}
-	else if (sum_leafs > 0) { // sum of leaves in nodes_x is greater than that in nodes_y
+	else if (diff_sum_leafs > 0) {								// sum of leaves in nodes_x is greater than that in nodes_y
 		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_y, nodes_x);
-	}// sum of leaves in nodes_x is equal to that in nodes_y
-	else if (sum_max_height <= 0) { // and sum of max_height in nodes_ x is less than or equal to that in nodes_y
+	}															// sum of leaves in nodes_x is equal to that in nodes_y
+	else if (diff_max_height <= 0) {							// and sum of max_height in nodes_ x is less than or equal to that in nodes_y
 		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_x, nodes_y);
 	}
-	else {	// sum of max_height in nodes_ x is greater than that in nodes_y
+	else {														// sum of max_height in nodes_ x is greater than that in nodes_y
 		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_y, nodes_x);
 	}
 }
@@ -384,12 +378,8 @@ vector<vector<string>> traverse(vector<shared_ptr<keynode>> solutions_root)
 
 	int i_arr = 0;
 	for (const shared_ptr<keynode> node : solutions_root) {
+		assert(i_arr < sum_leafs && "There are more leaf nodes than space is reserved in the array");
 		i_arr = node->traversePerNode(&arr, seq, i_arr);
-		
-		/* Below should not be able to evaluate true, but may function as a failsafe against out of bounds on arr
-		if (i_arr >= sum_leafs)
-			break;
-		*/
 	}
 
 	return arr;

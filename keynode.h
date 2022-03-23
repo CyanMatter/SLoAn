@@ -4,6 +4,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <cassert>
 
 using std::string; using std::unordered_map;
 using std::shared_ptr; using std::vector;

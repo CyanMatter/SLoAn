@@ -51,18 +51,17 @@ void keynode::add(shared_ptr<keynode> child)
 	auto stored_node_it = this->children.find(key);
 	if (stored_node_it != this->children.end()) {
 		shared_ptr<keynode> stored_node = stored_node_it->second;
-		if (stored_node == child) {
-			int a = 0; //break here
-		}
+		assert(stored_node != child && "This keynode cannot already contain a node "
+			"that is similar to the one that is being added.");
 	}
 
 	if (!keyInDescendants(this->key, child)) {
 		this->children[key] = child;
 	}
 	else {
-		// at this point this node's key is found in the child's node, meaning this node is already a child of the child node
-		// this is not supposed to happen. it likely happens with duplicate letters
-		int a = 0; // break here
+		throw std::exception("At this point this node's key is found in the child's node, "
+			"meaning this node is already a child of the child node.This is not supposed "
+			"to happen. It likely happens with duplicate letters");
 	}
 }
 
