@@ -7,12 +7,12 @@
   <p align="center">
     It's a <b>S</b>olver of <b>Lo</b>ng <b>An</b>agrams
     <br />
-    <a href="#getting-started"><strong>How to install »</strong></a>
+    <a href="#getting-started"><strong>How to install Â»</strong></a>
     <br />
     <br />
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Report bug</a>
-    ·
-    <a href="https://github.com/othneildrew/Best-README-Template/issues">Request feature</a>
+    <a href="https://github.com/CyanMatter/SLoAn/issues">Report bug</a>
+    Â·
+    <a href="https://github.com/CyanMatter/SLoAn/issues">Request feature</a>
   </p>
 </div>
 
@@ -45,23 +45,23 @@
 <!-- ABOUT -->
 ## About SLoAn
 
-This project is in development. In this case that means that there are several planned features yet to be 
+This project is in development. In this case that means that there are several planned features yet to be
 implemented and major bugs to be fixed.
 
-This is a command line program that will simply list all possible anagrams that can be made from an input 
+This is a command line program that will simply list all possible anagrams that can be made from an input
 sentence. It applies a user-submitted word list, although a default list is provided as well.
 
-An anagram is a word or phrase that is formed by rearranging the letters of a different word or phrase. 
+An anagram is a word or phrase that is formed by rearranging the letters of a different word or phrase.
 SLoAn uses all the original letters exactly once to arrive at its solutions.
 
-SLoAn is a hobby project. I'm fascinated by the idea that this simple game with one rule becomes 
-computationally exponentionally more intensive the more characters are added to the phrase. The challenge 
-is to discover a way to drastically reduce the amount of letter rearrangements that have to be processed 
-to arrive at an absolute answer. The goal is to deliver *all* possible anagrams, *quick*. 
+SLoAn is a hobby project. I'm fascinated by the idea that this simple game with one rule becomes
+computationally exponentionally more intensive the more characters are added to the phrase. The challenge
+is to discover a way to drastically reduce the amount of letter rearrangements that have to be processed
+to arrive at an absolute answer. The goal is to deliver *all* possible anagrams, *quick*.
 And then accordingly, the short processing time will allow for *long* inputs to be admissible as well.
 
-SLoAn "learns" by doing. It gets faster processing new unique phrases the more it solved in the past. 
-Anytime a little bit of the puzzle is solved, that solution is stored for quick look-up in the future. 
+SLoAn "learns" by doing. It gets faster processing new unique phrases the more it solved in the past.
+Anytime a little bit of the puzzle is solved, that solution is stored for quick look-up in the future.
 In effect, the algorithm gets increasingly more familiar with its word list the more queries it completes.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -130,6 +130,9 @@ _Building the project can be achieved in a number of ways. Detailed is how to in
    ```
    ```sh
    cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+   ```
+   ```sh
+   make
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
