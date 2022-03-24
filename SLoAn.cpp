@@ -175,26 +175,39 @@ string maskString(string& str, int mask[])
 
 unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator solve(data* const& map, const string& input, const int min_solution_length, const bool debug)
 {
-	shared_ptr<keynode> root = make_shared<keynode>(keynode(input, 0));
+	shared_ptr<keynode> root = make_shared<keynode>(keynode(input));
 	solve_rec(root, map, input, min_solution_length, debug);
 	return map->findSolution(input);
+}
+
+void debugFunction(shared_ptr<keynode> node_ptr)
+{
+	string test_node = "parliament";
+	sort(test_node.begin(), test_node.end());
+	if (test_node == node_ptr->key) {
+		vector<shared_ptr<keynode>> temp;
+		temp.push_back(node_ptr);
+		traverse(temp);
+	}
 }
 
 bool solve_rec(shared_ptr<keynode> node_ptr, data* const& map, const string& seq, const int min_solution_length, const bool debug)
 {
 	unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap = map->getSolutionMap();
-	auto it_seq = solutionMap->find(seq);
-	if (it_seq != solutionMap->end()) {										// found an pre-existing solution
-		return checkSolutions(it_seq, node_ptr);							// check if a solution exists for "seq." If so, add the node for that solution to "node_ptr" and return true
+	if (seq.size() >= min_solution_length) {
+		auto it_seq = solutionMap->find(seq);
+		if (it_seq != solutionMap->end()) {										// found an pre-existing solution
+			return checkSolutions(it_seq, node_ptr);							// check if a solution exists for "seq." If so, add the node for that solution to "node_ptr" and return true
+		}
 	}
 
 	bool is_solution = false;
 	unordered_map<string, vector<string>>* anagramMap = map->getAnagramMap();
 	int n = (1 << seq.length()) - 1;										// n is the maximum iterations
-	for (int mask = n; mask > 0; mask--) {									// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)
+	for (int mask = n; mask > 0; mask--) {									// mask will be every possible configuration of 0's and 1's in an size n binary sequence (except the sequence = 0)	
 		string subseq_in = "", subseq_out = "";								// subseq_in is the subsequence of input that is within the mask, while -out is outside of the mask
 		maskSequence(seq, mask, &subseq_in, &subseq_out);					// mask the input and collect the subsequence in the belonging string subseq_in or -out
-																			// i is the index of input where we stopped masking, because subseq_in is complete
+																			// i is the index of input where we stopped masking, because subseq_in is complete		
 		if (node_ptr->children.find(subseq_in) != node_ptr->children.end()) {	// if the "subseq_in" is already known by the node (this happens with duplicate letters in input)
 			continue;														// solve the next sequence
 		}
@@ -212,18 +225,18 @@ bool solve_rec(shared_ptr<keynode> node_ptr, data* const& map, const string& seq
 
 		auto anagram_it = anagramMap->find(subseq_in);						// get all anagrams of subseq_in
 		if (anagram_it != anagramMap->end()) {								// if there is any anagram at all, then we'll go a recursion deeper
-			shared_ptr<keynode> child_ptr = map->addSolution(seq, subseq_in, node_ptr->depth + 1);	// add this solution to the subsequence to the map of known solutions
+			map->addSolution(subseq_in, subseq_in, min_solution_length);	// save this solution for later
+			shared_ptr<keynode> child_ptr = make_shared<keynode>(keynode(subseq_in));
 			if (subseq_out.size() == 0) {									// if all letters in the input have been used in the sequence
-				node_ptr->add(child_ptr);									// add the new child node to this node
+				keynode::add(child_ptr, node_ptr);							// add the new child node to this node
 				is_solution = true;											// indicate to caller that a solution has been found
+				debugFunction(node_ptr);
 			}
 			else if (solve_rec(child_ptr, map, subseq_out, min_solution_length, debug)) {	// if all parts in the sequence form a solution
-				node_ptr->add(child_ptr);									// then add all those parts to this node
+				map->addSolution(seq, child_ptr, min_solution_length);		// add this solution to the subsequence to the map of known solutions
+				keynode::add(child_ptr, node_ptr);							// then add all those parts to this node
 				is_solution = true;											// indicate that this subtree contains at least 1 solution
-			}																// continue looking for other solutions
-			else {
-				eraseSolution(seq, solutionMap);							// remove the last added solution to input: the node referenced by child_ptr
-				map->addEmptySolution(subseq_in, min_solution_length);		// add "no anagram" solution for this key
+				debugFunction(node_ptr);
 			}
 		}
 		else {																// if there is ultimately no anagram found for this key
@@ -268,23 +281,27 @@ bool contains(vector<shared_ptr<keynode>> nodes, string key)
 }
 
 bool solve_intermediary_node_v1(const string& intermediary_key, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, data* const& map, const int min_solution_length, const bool debug) {
-	shared_ptr<keynode> temp_node = make_shared<keynode>(keynode(intermediary_key, parent->depth + 1));
+	shared_ptr<keynode> temp_node = make_shared<keynode>(keynode(intermediary_key));
 	if (solve_rec(temp_node, map, subseq_out, min_solution_length, debug)) {
-		parent->add(temp_node);
-		map->addSolution(seq, temp_node);
+		keynode::add(temp_node, parent);
+		map->addSolution(seq, temp_node, min_solution_length);
 		return true;
 	}
 	return false;
 }
 
 bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, shared_ptr<keynode> parent, const string& seq, const string& subseq_out, data* const& map, const int min_solution_length, const bool debug) {
-	shared_ptr<keynode> temp_node = make_shared<keynode>(keynode("", parent->depth));
+	shared_ptr<keynode> temp_node = make_shared<keynode>(keynode(""));
 	if (solve_rec(temp_node, map, subseq_out, min_solution_length, debug)) {
 		for (auto it = temp_node->children.begin(); it != temp_node->children.end(); it++) {
 			shared_ptr<keynode> child = it->second;
-			child->addToAllLeaves(intermediary_node_ptr);
-			parent->add(child);
-			map->addSolution(seq, child->key, child->depth);
+			
+			if (parent->childKnown(child))
+				continue;
+
+			keynode::addToAllLeaves(intermediary_node_ptr, child);
+			keynode::add(child, parent);
+			map->addSolution(seq, child->key, min_solution_length);
 		}
 		return true;
 	}
@@ -293,9 +310,9 @@ bool solve_intermediary_node_v2(shared_ptr<keynode> intermediary_node_ptr, share
 
 bool checkSolutions(unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it, shared_ptr<keynode> node_ptr)
 {
-	if (it->second.size() != 0) {								// if the solution is that there are any anagrams
+	if (it->second.size() != 0) {											// if the solution is that there are any anagrams
 		for (shared_ptr<keynode> child_ptr : it->second) {
-			node_ptr->add(child_ptr);									// add a reference for each existing child node to the tree					
+			keynode::add(child_ptr, node_ptr);								// add a reference for each existing child node to the tree					
 		}
 		return true;
 	}
@@ -305,33 +322,38 @@ bool checkSolutions(unordered_map<string, vector<shared_ptr<keynode>>>::const_it
 
 bool solveRemainingLetters(data* const& map, shared_ptr<keynode> node_ptr, const string& seq, const string& subseq_out, const string& subseq_in, unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it_in, const int min_solution_length, const bool debug)
 {
-	if (subseq_out.size() > 0) {							// and if this isn't the complete solution to the sequence
+	if (subseq_out.size() > 0) {											// if this isn't the complete solution to the sequence
 
 						//TODO check if subseq_out in solutionMap
 		unordered_map<string, vector<shared_ptr<keynode>>>* solutionMap = map->getSolutionMap();
 		unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator it_out = solutionMap->find(subseq_out);
-		if (it_out != solutionMap->end() && !map->eitherKeyIsInSolution(subseq_in, subseq_out, seq)) {
+		if (it_out != solutionMap->end() &&
+			it_out->second.size() != 0 &&
+			!map->eitherKeyIsInSolution(subseq_in, subseq_out, seq)) {
 			// we found a new solution for seq by combining the already known solutions for subseq_in and -out
 
 			// create a new node vector "parents" by duplicating either it_in->second or it_out->second and (including its children).
-			// whether of the two has the lowest sum of n_leafs, or lowest sum of height as a tie breaker.
-			pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> pair = bestParents(it_in->second, it_out->second);
-			vector<shared_ptr<keynode>> parents = pair.first;
-			vector<shared_ptr<keynode>> children = pair.second;
-			// recalculate max_height for "parents" (but depth doesn't need to be recalculated for "children," there is another location for that points toward these nodes and depth wouldn't be correct there. it doesn't matter) 
+			// whether of the two has the lowest sum of n_leaves, or lowest sum of height as a tie breaker.
+			auto t = bestParents(it_in->second, it_out->second);
+			vector<shared_ptr<keynode>> parents = std::get<0>(t);
+			vector<shared_ptr<keynode>> children = std::get<1>(t);
+			const int sum_leaves = std::get<2>(t);
+			const int max_height = std::get<3>(t);
 
-			// add the non-copied children as children to the leaves of "parents".
-			// add "parents" to the solutionMap at key "seq"
-			
-			//!WIP temporary
-			return false;
+			for (shared_ptr<keynode> parent : parents) {
+				shared_ptr<keynode> parent_copy = parent->deepCopy();
+				keynode::addToAllLeaves(children, parent_copy, sum_leaves, max_height);	// add the non-copied children as children to the leaves of "parents".
+				map->addSolution(seq, parent_copy, min_solution_length);	// add "parents" to the solutionMap at key "seq"
+			}
+
+			return true;
 		}
 
 		else if (!contains(it_in->second, subseq_in)) {
 			for (shared_ptr<keynode> child : it_in->second) {
 
 				//TODO check if subseq_out among child descendants
-				if (keynode::keyInDescendants(subseq_out, child)) {
+				if (child->keyInDescendants(subseq_out)) {
 					int a = 0;
 				}
 
@@ -344,41 +366,47 @@ bool solveRemainingLetters(data* const& map, shared_ptr<keynode> node_ptr, const
 	}
 	else {
 		for (shared_ptr<keynode> child_ptr : it_in->second) {
-			node_ptr->add(child_ptr);						// add a reference for each existing child node to the tree
+			keynode::add(child_ptr, node_ptr);								// add a reference for each existing child node to the tree
 		}
-		return true;									// indicate that this subtree contains at least 1 solution
+		return true;														// indicate that this subtree contains at least 1 solution
 	}
 	return false;
 }
 
-pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>> bestParents(vector<shared_ptr<keynode>> nodes_x, vector<shared_ptr<keynode>> nodes_y)
+tuple<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>, int, int> bestParents(vector<shared_ptr<keynode>> nodes_x, vector<shared_ptr<keynode>> nodes_y)
 {
-	const int diff_sum_leafs = data::sumLeafs(nodes_x) - data::sumLeafs(nodes_y);
-	const int diff_max_height = data::maxHeight(nodes_x) - data::maxHeight(nodes_y);
+	const int sum_leaves_x = keynode::sumLeaves(nodes_x);
+	const int max_height_x = keynode::maxHeight(nodes_x);
+	const int sum_leaves_y = keynode::sumLeaves(nodes_y);
+	const int max_height_y = keynode::maxHeight(nodes_y);
 
-	if (diff_sum_leafs < 0) {									// sum of leaves in nodes_x is less than that in nodes_y
-		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_x, nodes_y);
+	const int diff_sum_leaves = sum_leaves_x - sum_leaves_y;
+	const int diff_max_height = max_height_x - max_height_y;
+
+	if (diff_sum_leaves < 0) {												// sum of leaves in nodes_x is less than that in nodes_y
+		return tuple<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>, int, int>(nodes_x, nodes_y, sum_leaves_y, max_height_y);
 	}
-	else if (diff_sum_leafs > 0) {								// sum of leaves in nodes_x is greater than that in nodes_y
-		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_y, nodes_x);
-	}															// sum of leaves in nodes_x is equal to that in nodes_y
-	else if (diff_max_height <= 0) {							// and sum of max_height in nodes_ x is less than or equal to that in nodes_y
-		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_x, nodes_y);
+	else if (diff_sum_leaves > 0) {											// sum of leaves in nodes_x is greater than that in nodes_y
+		return tuple<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>, int, int>(nodes_y, nodes_x, sum_leaves_x, max_height_x);
+	}																		// sum of leaves in nodes_x is equal to that in nodes_y
+	else if (diff_max_height <= 0) {										// and sum of max_height in nodes_ x is less than or equal to that in nodes_y
+		return tuple<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>, int, int>(nodes_x, nodes_y, sum_leaves_y, max_height_y);
 	}
-	else {														// sum of max_height in nodes_ x is greater than that in nodes_y
-		return pair<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>>(nodes_y, nodes_x);
+	else {																	// sum of max_height in nodes_ x is greater than that in nodes_y
+		return tuple<vector<shared_ptr<keynode>>, vector<shared_ptr<keynode>>, int, int>(nodes_y, nodes_x, sum_leaves_x, max_height_x);
 	}
 }
 
 vector<vector<string>> traverse(vector<shared_ptr<keynode>> solutions_root)
 {
-	const int sum_leafs = data::sumLeafs(solutions_root);
-	vector<vector<string>> arr(sum_leafs);
-	vector<string> seq(data::maxHeight(solutions_root));
+	const size_t sum_leaves = keynode::sumLeaves(solutions_root);
+	const size_t max_height = keynode::maxHeight(solutions_root);
+	vector<vector<string>> arr(sum_leaves);
+	vector<string> seq(max_height);
 
 	int i_arr = 0;
 	for (const shared_ptr<keynode> node : solutions_root) {
-		assert(i_arr < sum_leafs && "There are more leaf nodes than space is reserved in the array");
+		assert(i_arr < sum_leaves && "There are more leaf nodes than space is reserved in the array");
 		i_arr = node->traversePerNode(&arr, seq, i_arr);
 	}
 

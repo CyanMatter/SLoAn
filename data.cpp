@@ -89,16 +89,27 @@ ofstream& operator<<(ofstream& ofs, data& map)
 	return ofs;
 }
 
-shared_ptr<keynode> data::addSolution(const string solution_key, const string node_key, const int node_depth)
+shared_ptr<keynode> data::addSolution(const string& solution_key, const string& node_key, const int min_solution_length)
 {
-	shared_ptr<keynode> node_ptr = make_shared<keynode>(keynode(node_key, node_depth));
-	this->addSolution(solution_key, node_ptr);
+	shared_ptr<keynode> node_ptr = make_shared<keynode>(keynode(node_key));
+	this->addSolution(solution_key, node_ptr, min_solution_length);
 	return node_ptr;
 }
 
-void data::addSolution(const string solution_key, shared_ptr<keynode> node_ptr)
+void data::addSolution(const string& solution_key, shared_ptr<keynode> node_ptr, const int min_solution_length)
 {
-	this->solutionMap[solution_key].push_back(node_ptr);
+	//!debug
+	//!delete later
+	string test_node = "lent";
+	string test_solution = "parliament";
+	sort(test_node.begin(), test_node.end());
+	sort(test_solution.begin(), test_solution.end());
+	if (test_node == node_ptr->key && test_solution == solution_key) {
+		int a = 0;
+	}
+	
+	if (solution_key.size() >= min_solution_length)
+		this->solutionMap[solution_key].push_back(node_ptr);
 }
 
 void data::addEmptySolution(const string key, const int min_solution_length)
@@ -365,22 +376,3 @@ time_t data::read_file_last_modified_for_map(data* const& map, ifstream& file)
 	else
 		throw new invalid_argument("Unable to read the first line of input file");
 }
-
-int data::sumLeafs(vector<shared_ptr<keynode>> nodes)
-{
-	int sum = 0;
-	for (shared_ptr<keynode> node : nodes) {
-		sum += node->n_leafs;
-	}
-	return sum;
-}
-
-int data::maxHeight(vector<shared_ptr<keynode>> nodes) {
-	int max_height = 0;
-	for (shared_ptr<keynode> node : nodes) {
-		if (node->max_height > max_height)
-			max_height = node->max_height;
-	}
-	return max_height;
-}
-;

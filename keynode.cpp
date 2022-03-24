@@ -4,27 +4,36 @@ keynode::keynode()
 {
 	this->key = "";
 	this->children = {};
-	this->depth = 0;
+	this->parents = {};
 	this->max_height = 1;
-	this->n_leafs = 1;
+	this->n_leaves = 1;
 }
 
-keynode::keynode(const string key, const int depth)
+keynode::keynode(const string& key)
 {
 	this->key = key;
 	this->children = {};
-	this->depth = depth;
+	this->parents = {};
 	this->max_height = 1;
-	this->n_leafs = 1;
+	this->n_leaves = 1;
+}
+
+keynode::keynode(const string& key, const unordered_map<string, shared_ptr<keynode>> children, const unordered_map<string, shared_ptr<keynode>> parents, const int max_height, const int n_leaves)
+{
+	this->key = key;
+	this->children = children;
+	this->parents = parents;
+	this->max_height = max_height;
+	this->n_leaves = n_leaves;
 }
 
 bool keynode::operator==(const keynode& rhs) const noexcept
 {
 	return this->key == rhs.key
 		&& this->children == rhs.children
-		&& this->depth == rhs.depth
+		&& this->parents == rhs.parents
 		&& this->max_height == rhs.max_height
-		&& this->n_leafs == rhs.n_leafs;
+		&& this->n_leaves == rhs.n_leaves;
 }
 
 bool keynode::isLeaf()
@@ -32,31 +41,58 @@ bool keynode::isLeaf()
 	return this->max_height == 0;
 }
 
-void keynode::add(shared_ptr<keynode> child)
+bool keynode::childKnown(shared_ptr<keynode> child)
 {
-	int n_leafs = child->n_leafs;
-	if (this->children.size() > 0)
-		this->n_leafs += n_leafs;
-	else
-		this->n_leafs = n_leafs;
+	auto it = this->children.find(child->key);
+	while (it != this->children.end()) {
+		if (child == it->second) {
+			return true;
+		}
+		it++;
+	}
+	return false;
+}
 
-	int temp_height = child->max_height + 1;
-	if (temp_height > this->max_height) {
-		this->max_height = temp_height;
+void keynode::updateNLeaves(const int n_leaves)
+{
+	if (this->children.size() > 0)
+		this->n_leaves += n_leaves;
+	else
+		this->n_leaves = n_leaves;
+}
+
+void keynode::updateMaxHeight(const int height)
+{
+	if (height <= this->max_height) {
+		return;
 	}
 
-	const string key = child->key;
+	this->max_height = height;
+
+	for (auto it = this->parents.begin(); it != this->parents.end(); it++) {
+		it->second->updateMaxHeight(height + 1);
+	}
+}
+
+void keynode::safelyAdd(shared_ptr<keynode> child, shared_ptr<keynode> parent)
+{
+	const string& key = child->key;
+
 	//! test: a duplicate node should not arrive here. it's already in child nodes
 	//! delete this segment later
-	auto stored_node_it = this->children.find(key);
-	if (stored_node_it != this->children.end()) {
+	auto stored_node_it = parent->children.find(key);
+	if (stored_node_it != parent->children.end()) {
 		shared_ptr<keynode> stored_node = stored_node_it->second;
 		assert(stored_node != child && "This keynode cannot already contain a node "
-			"that is similar to the one that is being added.");
+			"that is identical to the one that is being added.");
 	}
 
-	if (!keyInDescendants(this->key, child)) {
-		this->children[key] = child;
+	//!WIP parent and/or child can add a chain of nodes to each other.
+	//! I believe each and every node in the chain should be tested in nodeInDescendants and nodeInAncestors.
+	//! But consider that making deep copies of every added node might suffice.
+	if (parent->key == "" || (!parent->nodeInDescendants(child) && !child->nodeInAncestors(parent))) {
+		parent->children[key] = child;
+		child->parents[parent->key] = parent;
 	}
 	else {
 		throw std::exception("At this point this node's key is found in the child's node, "
@@ -65,16 +101,72 @@ void keynode::add(shared_ptr<keynode> child)
 	}
 }
 
-void keynode::addToAllLeaves(shared_ptr<keynode> child)
+void keynode::add(shared_ptr<keynode> child, shared_ptr<keynode> parent)
 {
-	if (this->isLeaf() && this->key != child->key) {
-		this->add(child);
+	parent->updateNLeaves(child->n_leaves);
+	parent->updateMaxHeight(child->max_height + 1);
+	safelyAdd(child, parent);
+}
+
+void keynode::add(vector<shared_ptr<keynode>> children, shared_ptr<keynode> parent, const int sum_leaves, const int max_height_children)
+{
+	parent->updateNLeaves(sum_leaves);
+	parent->updateMaxHeight(max_height_children + 1);
+	
+	for (shared_ptr<keynode> child : children) {
+		safelyAdd(child, parent);
+	}
+}
+
+void keynode::add(vector<shared_ptr<keynode>> children, shared_ptr<keynode> parent)
+{
+	const int sum_leaves = sumLeaves(children);
+	const int max_height = maxHeight(children);
+	keynode::add(children, parent, sum_leaves, max_height);
+}
+
+void keynode::addToAllLeaves(shared_ptr<keynode> child, shared_ptr<keynode> node)
+{
+	if (node->isLeaf() && node->key != child->key) {
+		keynode::add(child, node);
 	}
 	else {
-		for (auto it = this->children.begin(); it != this->children.end(); it++) {
-			if (this->key != child->key)
-				it->second->addToAllLeaves(child);
+		for (auto it = node->children.begin(); it != node->children.end(); it++) {
+			if (node->key != child->key)
+				keynode::addToAllLeaves(child, it->second);
 		}
+	}
+}
+
+void keynode::addToAllLeaves(vector<shared_ptr<keynode>> children, shared_ptr<keynode> node)
+{
+	const int sum_leaves = sumLeaves(children);
+	const int max_height = maxHeight(children);
+	keynode::addToAllLeaves_rec(children, node, sum_leaves, max_height);
+}
+
+void keynode::addToAllLeaves(vector<shared_ptr<keynode>> children, shared_ptr<keynode> node, const int sum_leaves, const int max_height)
+{
+	keynode::addToAllLeaves_rec(children, node, sum_leaves, max_height);
+}
+
+int keynode::addToAllLeaves_rec(vector<shared_ptr<keynode>> children, shared_ptr<keynode> node, const int sum_leaves, const int max_height)
+{
+	if (node->isLeaf()) {
+		keynode::add(children, node);
+		node->max_height = max_height + 1;
+		return node->max_height;
+	}
+	else {
+		int height;
+		for (auto it = node->children.begin(); it != node->children.end(); it++) {
+			height = keynode:: addToAllLeaves_rec(children, it->second, sum_leaves, max_height);
+			height++;
+			if (node->max_height < height) {
+				node->max_height = height;
+			}
+		}
+		return node->max_height;
 	}
 }
 
@@ -95,31 +187,92 @@ int keynode::traversePerNode(vector<vector<string>>* const& arr_ptr, vector<stri
 	return i_arr + 1;
 }
 
-bool keynode::keyInDescendants(string key, shared_ptr<keynode> node)
+shared_ptr<keynode> keynode::deepCopy()
 {
-	if (key == "")
-		return false;				// exception for the root node
-
-	for (auto it = node->children.begin(); it != node->children.end(); it++) {
-		if (isSubsequence(key, it->second->key)) {
-			if (keyInDescendants(key, it->second))
-				return true;
-		}
+	unordered_map<string, shared_ptr<keynode>> copied_children = {};
+	for (auto it_child = this->children.begin(); it_child != this->children.end(); it_child++) {
+		shared_ptr<keynode> child = it_child->second;
+		shared_ptr<keynode> copied_child = child->deepCopy();
+		copied_children[copied_child->key] = copied_child;
 	}
+	keynode copied_node(this->key, copied_children, {}, this->max_height, this->n_leaves);
+	return make_shared<keynode>(copied_node);
+}
+
+int keynode::sumLeaves(vector<shared_ptr<keynode>> nodes)
+{
+	int sum = 0;
+	for (shared_ptr<keynode> node : nodes) {
+		sum += node->n_leaves;
+	}
+	return sum;
+}
+
+int keynode::maxHeight(vector<shared_ptr<keynode>> nodes) {
+	int max_height = 0;
+	for (shared_ptr<keynode> node : nodes) {
+		if (node->max_height > max_height)
+			max_height = node->max_height;
+	}
+	return max_height;
+}
+
+bool keynode::nodeInAncestors(shared_ptr<keynode> node)
+{
+	{
+		auto it = this->parents.find(node->key);
+		if (it != this->parents.end() && it->second == node)
+			return true;
+	}
+	for (auto it = this->parents.begin(); it != this->parents.end(); it++) {
+		shared_ptr<keynode> parent = it->second;
+		if (parent->nodeInAncestors(node))
+			return true;
+	}
+
 	return false;
 }
 
-bool keynode::isSubsequence(string& subseq, string& seq)
+bool keynode::nodeInDescendants(shared_ptr<keynode> node)
 {
-	// assume that both subseq and seq are sorted alphabetically
+	{
+		auto it = this->children.find(node->key);
+		if (it != this->children.end() && it->second == node)
+			return true;
+	}
+	for (auto it = this->children.begin(); it != this->children.end(); it++) {
+		shared_ptr<keynode> child = it->second;
+		if (child->nodeInDescendants(node))
+			return true;
+	}
+
+	return false;
+}
+
+bool keynode::keyInDescendants(const string& key)
+{
+	{
+		auto it = this->children.find(key);
+		if (it != this->children.end())
+			return true;
+	}
+	for (auto it = this->children.begin(); it != this->children.end(); it++) {
+		shared_ptr<keynode> child = it->second;
+		if (child->keyInDescendants(key))
+			return true;
+	}
+
+	return false;
+}
+
+bool keynode::isSubsequenceOfKey(const string& subseq)
+{
+	// assume that both subseq and this->key are sorted alphabetically
 	string intersection = "";
-	for (char c : seq) {
+	for (char c : this->key) {
 		size_t i = subseq.find(c);
 		if (i != string::npos)
-			intersection += subseq[i];
+			intersection += c;
 	}
-	if (subseq.compare(intersection) == 0)
-		return true;
-	else
-		return false;
+	return subseq.compare(intersection) == 0;
 }
