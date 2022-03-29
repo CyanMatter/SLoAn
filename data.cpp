@@ -13,7 +13,7 @@ void data::setAnagramMap(unordered_map<string, vector<string>> map)
 {
 	this->anagramMap = map;
 }
-unordered_map<string, vector<shared_ptr<keynode>>>* data::getSolutionMap()
+unordered_map<string, solution>* data::getSolutionMap()
 {
 	return &solutionMap;
 }
@@ -89,36 +89,36 @@ ofstream& operator<<(ofstream& ofs, data& map)
 	return ofs;
 }
 
-shared_ptr<keynode> data::addSolution(const string& solution_key, const string& node_key, const int min_solution_length)
+shared_ptr<keynode> data::addSolution(const string& sol_key, const string& node_key, const int min_solution_length)
 {
 	shared_ptr<keynode> node_ptr = make_shared<keynode>(keynode(node_key));
-	this->addSolution(solution_key, node_ptr, min_solution_length);
+	this->addSolution(sol_key, node_ptr, min_solution_length);
 	return node_ptr;
 }
 
-void data::addSolution(const string& solution_key, shared_ptr<keynode> node_ptr, const int min_solution_length)
-{
-	//!debug
-	//!delete later
-	string test_node = "lent";
-	string test_solution = "parliament";
-	sort(test_node.begin(), test_node.end());
-	sort(test_solution.begin(), test_solution.end());
-	if (test_node == node_ptr->key && test_solution == solution_key) {
-		int a = 0;
+void data::addSolution(const string& sol_key, shared_ptr<keynode> node_ptr, const int min_solution_length)
+{	
+	if (sol_key.size() >= min_solution_length) {
+		solution sol;
+		unordered_map<string, solution>::const_iterator it = this->solutionMap.find(sol_key);
+		if (it == this->solutionMap.end()) {
+			sol = unordered_map<string, shared_ptr<keynode>>();
+		}
+		else {
+			sol = it->second;
+		}
+		sol[node_ptr->key] = node_ptr;
+		this->solutionMap[sol_key] = sol;
 	}
-	
-	if (solution_key.size() >= min_solution_length)
-		this->solutionMap[solution_key].push_back(node_ptr);
 }
 
 void data::addEmptySolution(const string key, const int min_solution_length)
 {
 	if (key.size() >= min_solution_length)
-		this->solutionMap[key] = vector<shared_ptr<keynode>>();
+		this->solutionMap[key] = {};
 }
 
-unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator data::findSolution(const string& key)
+unordered_map<string, solution>::const_iterator data::findSolutions(const string& key)
 {
 	return this->solutionMap.find(key);
 }
@@ -128,12 +128,13 @@ unordered_map<string, vector<string>>::const_iterator data::findAnagram(const st
 	return this->anagramMap.find(key);
 }
 
-bool data::eitherKeyIsInSolution(const string& key_x, const string& key_y, const string& seq)
+bool data::eitherKeyIsInSolutions(const string& key_x, const string& key_y, const string& seq)
 {
-	unordered_map<string, vector<shared_ptr<keynode>>>::const_iterator seq_it = this->solutionMap.find(seq);
-	if (seq_it != this->solutionMap.end()) {
-		for (shared_ptr<keynode> child : seq_it->second) {
-			if (child->key == key_x || child->key == key_y) {
+	unordered_map<string, solution>::const_iterator it_seq = this->solutionMap.find(seq);
+	if (it_seq != this->solutionMap.end()) {
+		solution sol = it_seq->second;
+		for (auto it_sol = sol.begin(); it_sol != sol.end(); it_sol++) {
+			if (it_sol->second->key == key_x || it_sol->second->key == key_y) {
 				return true;
 			}
 		}
@@ -169,6 +170,11 @@ time_t data::string_as_time_t(string& str)
 	ss << str;
 	ss >> t;
 	return t;
+}
+
+bool data::hasAnagram(const unordered_map<string, solution>::const_iterator map_it)
+{
+	return map_it->second.size() > 0;
 }
 
 string data::unordered_map_as_string()
